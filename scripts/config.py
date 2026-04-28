@@ -38,7 +38,6 @@ CACHE = REFERENCE / "cache"
 COMPILED.mkdir(parents=True, exist_ok=True)
 CACHE.mkdir(parents=True, exist_ok=True)
 
-
 # ============================================================
 # YAML 로더 (없으면 빈 dict)
 # ============================================================
@@ -52,11 +51,9 @@ def _load_yaml(name: str) -> dict:
         print(f"[config] WARN: {name} 로드 실패 — {ex}. 기본값 사용")
         return {}
 
-
 _PROJECT = _load_yaml("project.yaml")
 _CHANNELS = _load_yaml("channels.yaml")
 _LENS = _load_yaml("lens_presets.yaml")
-
 
 # ============================================================
 # Defaults (yaml 없을 때 fallback)
@@ -78,9 +75,9 @@ _DEFAULT_CHANNELS = {
     "seo_jaehyung": {"name": "서재형의 투자교실", "channel_id": "UCtmKBFeri9hx9DOaVSSvvvw",
                      "style": "산업 사이클", "lens": "top-down", "stock_weight": 1.3},
     "supergaemi": {"name": "슈퍼개미 이세무사", "channel_id": "UCowHl0BGalL433P6bCBgeKA",
-                   "style": "트레이딩 + 개별주식", "lens": "bottom-up"},
-}
+                   "style": "트레이딩 + 개별주식", "lens": "bottom-up"}
 
+}
 
 # ============================================================
 # 외부 위치 — yaml 우선, defaults fallback
@@ -96,13 +93,11 @@ EXTRACTION_MODEL = (_PROJECT.get("extraction") or {}).get("model", "gpt-5.4-nano
 
 INTEGRATIONS = _PROJECT.get("integrations") or {}
 
-
 # ============================================================
 # Lens presets + 채널 dict
 # ============================================================
 LENS_PRESETS = _LENS.get("lens_presets") or _DEFAULT_LENS_PRESETS
 _RAW_CHANNELS = _CHANNELS.get("channels") or _DEFAULT_CHANNELS
-
 
 def _resolve(meta: dict) -> dict:
     """LENS_PRESETS 적용 — 명시값 우선, lens 기본값 fallback."""
@@ -112,9 +107,7 @@ def _resolve(meta: dict) -> dict:
     out.update(meta)
     return out
 
-
 CHANNELS = {k: _resolve(v) for k, v in _RAW_CHANNELS.items()}
-
 
 def channel_paths(subdir):
     """채널별 디렉터리 경로 dict 반환."""
@@ -124,7 +117,6 @@ def channel_paths(subdir):
         "transcripts": base / "transcripts",
         "extractions": base / "extractions_v2",
     }
-
 
 # ============================================================
 # Self-test

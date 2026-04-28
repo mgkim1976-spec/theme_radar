@@ -1,27 +1,27 @@
 """add_channel — 신규 채널 추가 헬퍼.
 
+v2.3+: config/channels.yaml 이 단일 진실 원천. 이 스크립트가 yaml에 추가.
+
 사용:
-  python3 scripts/add_channel.py UC<channel_id> <subdir> <lens> "[채널명]"
+  python3 scripts/add_channel.py UC<channel_id> <subdir> <lens> "[채널명]" [--apply]
 
 흐름:
   1. 입력 검증 (channel_id 형식, lens가 LENS_PRESETS에 있는지)
-  2. 중복 체크 (이미 등록된 subdir 또는 channel_id면 거부)
+  2. 중복 체크
   3. 데이터 디렉터리 미리 생성 (transcripts/, extractions_v2/)
-  4. config.py CHANNELS dict에 들어갈 Python literal 출력
-  5. (선택) --apply 면 config.py에 자동 삽입 (마지막 항목 뒤에 끼움)
-
-자동 편집 후엔:
-  bash scripts/pipeline.sh --dry-run   # 5채널 인식 확인
-  bash scripts/pipeline.sh             # 다음 실행에서 자동으로 fetch+extract
+  4. yaml entry 출력
+  5. (선택) --apply 면 config/channels.yaml 에 자동 삽입
 """
 import re
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
-from config import CHANNELS, LENS_PRESETS, YOUTUBE_DATA, SCRIPTS
+import yaml
 
-CONFIG_PATH = SCRIPTS / "config.py"
+sys.path.insert(0, str(Path(__file__).parent))
+from config import CHANNELS, LENS_PRESETS, YOUTUBE_DATA, CONFIG_DIR
+
+CHANNELS_YAML = CONFIG_DIR / "channels.yaml"
 
 
 def usage_and_exit(msg: str = ""):
@@ -46,34 +46,52 @@ def validate(channel_id: str, subdir: str, lens: str):
             usage_and_exit(f"이미 등록된 channel_id ({k}): {channel_id}")
 
 
-def render_snippet(channel_id: str, subdir: str, lens: str, name: str) -> str:
+def render_yaml_snippet(channel_id: str, subdir: str, lens: str, name: str) -> dict:
     style_hint = {
         "macro": "매크로",
         "top-down": "탑다운",
         "sector": "산업·섹터",
         "bottom-up": "개별 종목",
     }.get(lens, lens)
-    return f'''    "{subdir}": {{
-        "name": "{name}",
-        "channel_id": "{channel_id}",
-        "style": "{style_hint}",
-        "lens": "{lens}",
-    }},'''
+    return {
+        "name": name,
+        "channel_id": channel_id,
+        "style": style_hint,
+        "lens": lens,
+    }
 
 
-def auto_apply(snippet: str) -> bool:
-    src = CONFIG_PATH.read_text()
-    # CHANNELS = { ... } 의 마지막 } 직전에 snippet 삽입
-    m = re.search(r"(CHANNELS\s*=\s*\{.*?)\n\}", src, flags=re.DOTALL)
-    if not m:
+def auto_apply_yaml(subdir: str, entry: dict) -> bool:
+    """config/channels.yaml 의 channels 섹션에 entry 추가."""
+    if not CHANNELS_YAML.exists():
+        # 새 yaml 생성
+        CHANNELS_YAML.write_text(yaml.safe_dump(
+            {"channels": {subdir: entry}}, allow_unicode=True, sort_keys=False
+        ))
+        return True
+    # 기존 yaml 파싱 → 추가 → 다시 쓰기 (기존 헤더 주석 보존)
+    text = CHANNELS_YAML.read_text()
+    try:
+        d = yaml.safe_load(text) or {}
+    except Exception:
         return False
-    block = m.group(1)
-    if snippet.strip() in block:
-        print("  ⏩ snippet이 이미 있음 — 변경 없음")
+    if "channels" not in d:
+        d["channels"] = {}
+    if subdir in d["channels"]:
+        print(f"  ⏩ {subdir} 이미 있음 — 변경 없음")
         return False
-    new_block = block.rstrip(",\n") + ",\n" + snippet + "\n"
-    new_src = src.replace(block, new_block, 1)
-    CONFIG_PATH.write_text(new_src)
+    d["channels"][subdir] = entry
+    # 헤더 주석 추출 (channels: 줄 이전까지)
+    lines = text.splitlines()
+    header_lines = []
+    for ln in lines:
+        if ln.strip().startswith("channels:"):
+            break
+        header_lines.append(ln)
+    header = "\n".join(header_lines).rstrip() + "\n\n"
+    body = yaml.safe_dump({"channels": d["channels"]}, allow_unicode=True,
+                          sort_keys=False, default_flow_style=False)
+    CHANNELS_YAML.write_text(header + body)
     return True
 
 
@@ -93,22 +111,23 @@ def main():
     (base / "extractions_v2").mkdir(parents=True, exist_ok=True)
     print(f"  ✓ 데이터 디렉터리 준비됨: {base}")
 
-    snippet = render_snippet(channel_id, subdir, lens, name)
+    entry = render_yaml_snippet(channel_id, subdir, lens, name)
     preset = LENS_PRESETS[lens]
     print(f"\n  Lens preset 적용 → stock_weight={preset['stock_weight']}, "
           f"max_videos_per_run={preset['max_videos_per_run']}")
-    print(f"\n--- config.py CHANNELS 에 추가할 entry ---\n{snippet}\n")
+    print(f"\n--- config/channels.yaml 에 추가할 entry ---")
+    print(yaml.safe_dump({subdir: entry}, allow_unicode=True, sort_keys=False))
 
     if apply:
-        if auto_apply(snippet):
-            print(f"  ✓ {CONFIG_PATH}에 자동 삽입 완료")
+        if auto_apply_yaml(subdir, entry):
+            print(f"  ✓ {CHANNELS_YAML}에 자동 삽입 완료")
             print(f"\n다음 단계:")
             print(f"  bash scripts/pipeline.sh --dry-run   # {len(CHANNELS) + 1}채널 인식 확인")
             print(f"  bash scripts/pipeline.sh             # 다음 실행에서 자동 fetch+extract")
         else:
-            print(f"  ⚠️ 자동 삽입 실패 — 위 snippet을 수동으로 config.py에 넣어주세요")
+            print(f"  ⚠️ 자동 삽입 실패 — 위 entry를 수동으로 channels.yaml에 추가하세요")
     else:
-        print("  (--apply 옵션을 추가하면 config.py에 자동 삽입)")
+        print("  (--apply 옵션을 추가하면 channels.yaml 에 자동 삽입)")
 
 
 if __name__ == "__main__":
