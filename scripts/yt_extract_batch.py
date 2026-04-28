@@ -6,10 +6,10 @@ import json
 import sys
 import time
 from pathlib import Path
-from yt_extract_v2 import extract
-from ticker_normalize import normalize_extraction
 
 sys.path.insert(0, str(Path(__file__).parent))
+from yt_extract_v2 import extract
+from ticker_normalize import normalize_extraction
 from config import channel_paths, EXTRACTION_MODEL
 
 MODEL = sys.argv[1] if len(sys.argv) > 1 else EXTRACTION_MODEL
