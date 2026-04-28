@@ -1,0 +1,18 @@
+{
+  "pattern_type": "SIGNAL_MASTER",
+  "slug": "market_regime",
+  "canonical": "Market Regime",
+  "source": "FRED:computed",
+  "latest_value": "OVERHEATING",
+  "regime_score": 0.037,
+  "growth_z": 0.5043,
+  "inflation_z": 1.9336,
+  "liquidity_z": 0.423,
+  "confidence": 0.68,
+  "drivers": "GDP(growth↓), CPIAUCSL(inflation↑), CPILFESL(inflation↑), Brent(inflation↑), Copper(inflation↑)",
+  "alert_status": "WATCH",
+  "latest_date": "2026-04-10",
+  "updated_at": "2026-04-12",
+  "_synced_at": "2026-04-28T12:52:02",
+  "_source": "~/MGPrj/investment_ontology/ontology_patterns/signal/SIGNAL-REGIME.md"
+}

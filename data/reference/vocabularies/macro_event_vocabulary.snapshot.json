@@ -1,0 +1,1144 @@
+{
+  "_meta": {
+    "version": "1.2",
+    "description": "매크로 이벤트 서브타입 어휘 사전. corporate_event_vocabulary.json의 매크로 버전. Macro_Finance 노트(Macro_Foundation_Synthesis / Central_Bank_Policy / Macro_Financial_Linkage / Asset_Class_Expected_Returns / BIS_EuroDollar / MIP_Bonds) 기반.",
+    "total_events": 42,
+    "severity_levels": [
+      "CRITICAL",
+      "HIGH",
+      "MEDIUM",
+      "LOW"
+    ],
+    "directions": [
+      "positive",
+      "negative",
+      "mixed",
+      "neutral"
+    ],
+    "note": "매크로 이벤트는 개별 종목이 아닌 자산군(equity_index/bond_market/commodity/fx 등)에 영향. object_entity_id 설정 불필요. 풀링이 의도적(같은 이벤트 유형이 동일 방향으로 반복됨).",
+    "last_updated": "2026-04-12",
+    "sources_integrated": [
+      "Macro_Data_Release_Patterns.md",
+      "FOMC_Reaction_Patterns.md",
+      "GS_Event_Trading_Research_5Papers.md",
+      "Foundation_FX.md (JPM Normand 2012)"
+    ]
+  },
+  "events": {
+    "fed_pivot": {
+      "korean_name": "연준 피벗",
+      "description": "연준의 금리 방향 전환 — 긴축→완화 또는 완화→긴축. 자산 전반 리프라이싱 트리거.",
+      "severity": "CRITICAL",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 3,
+        "max": 8
+      },
+      "subject_category": "central_bank_action",
+      "predicate_map": {
+        "equity": "support",
+        "bond": "drive_outperformance",
+        "dollar": "drive_underperformance",
+        "gold": "support"
+      },
+      "keywords_ko": [
+        "연준 피벗",
+        "Fed 피벗",
+        "금리 방향 전환",
+        "rate pivot",
+        "정책 전환",
+        "긴축 종료",
+        "완화 전환",
+        "인상 사이클 종료",
+        "첫 금리 인하"
+      ],
+      "causal_chain": "Fed Forward Guidance 변화 → 단기금리 재조정 → yield curve 스티프닝 → 주식 밸류에이션 리레이팅 + 달러 약세",
+      "base_rate": {
+        "last_rate_hike_signal_sp500": "+2.5% (마지막 인상 시그널 당일, S&P500 평균)",
+        "emergency_cut_sp500": "-2.0% (긴급 금리 인하 — 시장 공포 반영, 단기 급락 후 반전)",
+        "dovish_pivot_12m": "+15~25% (긴축→완화 전환 확인 후 12개월, 미국 주식)",
+        "bond_lead_time": "채권이 3~6개월 선행 랠리 (Ilmanen: ERP 압축 전 BRP 하락)"
+      },
+      "regime_context": "CONTRACTION 또는 EXPANSION으로 전환 시 발생 빈도 높음",
+      "framework": "Ilmanen: 연준 피벗이 ERP(주식 리스크 프리미엄) 압축 → 주가 상승. 채권은 선행 랠리(3~6개월)."
+    },
+    "qt_acceleration": {
+      "korean_name": "QT 가속",
+      "description": "양적긴축(Quantitative Tightening) 속도 증가 — Fed 대차대조표 축소 규모 확대. 유동성 조건 직접 악화.",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": 2,
+        "max": 5
+      },
+      "subject_category": "central_bank_action",
+      "predicate_map": {
+        "equity": "elevate_risk",
+        "bond": "drive_underperformance",
+        "credit": "compress"
+      },
+      "keywords_ko": [
+        "QT 가속",
+        "양적긴축 확대",
+        "대차대조표 축소",
+        "SOMA 축소",
+        "MBS 매각",
+        "국채 매각 확대",
+        "balance sheet runoff 가속"
+      ],
+      "causal_chain": "Fed 자산 축소 → 시중 준비금 감소 → 국채 공급 증가 → 금리 상승 + 신용 스프레드 확대 → 위험자산 압박",
+      "framework": "TGA + RRP 유동성 삼각형: TGA 잔액 상승 + RRP 소진 완료 후 QT → 유동성 진공 구간"
+    },
+    "qt_pause": {
+      "korean_name": "QT 중단/완화",
+      "description": "양적긴축 속도 감소 또는 일시 중단. 시장 유동성 개선 신호.",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 2,
+        "max": 4
+      },
+      "subject_category": "central_bank_action",
+      "keywords_ko": [
+        "QT 종료",
+        "양적긴축 중단",
+        "QT 페이스 감소",
+        "대차대조표 안정화",
+        "balance sheet pause",
+        "SOMA 축소 중단"
+      ],
+      "causal_chain": "QT 중단 → 준비금 안정 → 유동성 긴축 해소 → 위험 자산 리랠리"
+    },
+    "tga_release": {
+      "korean_name": "TGA 방출 (유동성 공급)",
+      "description": "재무부 일반계정(Treasury General Account) 잔액 급감 → 시중 유동성 대규모 공급. 부채한도 협상 또는 쿼터 지출 시 발생.",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 1,
+        "max": 3
+      },
+      "subject_category": "macro_trend",
+      "keywords_ko": [
+        "TGA 방출",
+        "재무부 일반계정 감소",
+        "TGA 잔액 하락",
+        "Treasury spending",
+        "부채한도 협상 타결 후 TGA",
+        "TGA drawdown",
+        "TGA balance decline"
+      ],
+      "causal_chain": "TGA 잔액 → 시중 은행 준비금 유입 → 단기 유동성 급증 → 리스크 온 + 달러 약세 압력",
+      "framework": "TGA+RRP 유동성 삼각형: TGA 방출이 RRP 소진과 동시 진행 시 유동성 효과 배가"
+    },
+    "rrp_drawdown": {
+      "korean_name": "RRP 소진 (유동성 재투입)",
+      "description": "역RP(Reverse Repo Program) 잔액 소진 → 머니마켓 유동성이 국채 시장으로 이동. 단기 유동성 공급 효과.",
+      "severity": "MEDIUM",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 1,
+        "max": 2
+      },
+      "subject_category": "macro_trend",
+      "keywords_ko": [
+        "RRP 소진",
+        "역RP 잔액 감소",
+        "Reverse Repo 하락",
+        "RRP balance decline",
+        "머니마켓 RRP 감소",
+        "ON RRP 소진"
+      ],
+      "causal_chain": "RRP 잔액 감소 → MMF가 T-bill 매수로 전환 → 단기 금리 하방 압력 + 시스템 유동성 공급",
+      "framework": "RRP는 초과 유동성의 임시 보관소. 소진 = 유동성이 실물 금융 시스템에 재투입"
+    },
+    "ycc_band_adjustment": {
+      "korean_name": "YCC 밴드 조정 (BOJ)",
+      "description": "일본은행 수익률 곡선 통제(Yield Curve Control) 허용 밴드 확대 또는 폐지. 글로벌 장기금리 체제 변화.",
+      "severity": "CRITICAL",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": 3,
+        "max": 7
+      },
+      "subject_category": "central_bank_action",
+      "keywords_ko": [
+        "YCC 폐지",
+        "YCC 밴드 확대",
+        "일본 수익률 곡선 통제",
+        "BOJ YCC 조정",
+        "10Y JGB 상한 조정",
+        "일본 금리 자유화",
+        "YCC 해제"
+      ],
+      "causal_chain": "BOJ YCC 밴드 확대 → JGB 금리 상승 → 엔 캐리 청산 압력 → 글로벌 자산 repatriation → 미국채 매도 → 달러/엔 급락",
+      "framework": "BOJ 결정은 글로벌 유동성의 최후 보루. YCC 해제는 30년 저금리 체제 종식 신호."
+    },
+    "yen_carry_unwind": {
+      "korean_name": "엔 캐리 청산",
+      "description": "엔화로 조달해 고수익 자산에 투자한 캐리 트레이드 급격한 청산. 글로벌 위험자산 동반 급락.",
+      "severity": "CRITICAL",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": 5,
+        "max": 15
+      },
+      "subject_category": "macro_trend",
+      "keywords_ko": [
+        "엔 캐리 청산",
+        "yen carry unwind",
+        "JPY 급등",
+        "달러/엔 급락",
+        "carry trade 청산",
+        "글로벌 디레버리징",
+        "캐리 크런치"
+      ],
+      "causal_chain": "BOJ 긴축 or 글로벌 충격 → JPY 강세 → 엔화 조달 비용 급등 → 강제 포지션 청산 → 신흥국/고베타 자산 급락 → VIX 스파이크",
+      "framework": "엔 캐리 청산은 비선형(레버리지 청산 → 가격 충격 → 추가 청산 루프). 2024-08 BOJ 인상 사례: S&P -3%, Nikkei -12% 단일일",
+      "base_rate": {
+        "boj_trigger_spy_pct": -3.0,
+        "vix_spike_typical": 8.0,
+        "em_contagion_days": 3,
+        "gold_reaction": "mixed",
+        "carry_reversal_speed": "hours_to_days",
+        "historical_episodes": [
+          "1998_ltcm",
+          "2007_subprime",
+          "2024_aug"
+        ]
+      }
+    },
+    "forward_guidance_shift": {
+      "korean_name": "포워드 가이던스 변화",
+      "description": "중앙은행 발언/성명에서 미래 금리 경로 시그널이 기존 예상에서 이탈. 시장 재조정 촉매.",
+      "severity": "HIGH",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 1,
+        "max": 3
+      },
+      "subject_category": "central_bank_action",
+      "keywords_ko": [
+        "포워드 가이던스",
+        "forward guidance",
+        "데이터 의존",
+        "data dependent",
+        "점도표 변화",
+        "dot plot shift",
+        "FOMC 성명 변화",
+        "hawkish surprise",
+        "dovish surprise",
+        "의장 발언 변화"
+      ],
+      "base_rate": {
+        "dot_plot_dovish_sp500": "+1.5~2.5% (점도표 하향 당일, S&P500 평균 — FOMC 반응 패턴)",
+        "dot_plot_hawkish_sp500": "-0.8~1.5% (점도표 상향 또는 hawkish surprise 당일)",
+        "10y_hawkish_surprise": "+5~15bp (hawkish surprise → 10Y 금리 상승)",
+        "10y_dovish_surprise": "-5~10bp (dovish surprise → 10Y 금리 하락)",
+        "blackout_period": "FOMC 회의 10일 전부터 발언 없음 (Blackout) — 시장 기대 고정",
+        "press_conference_dominance": true,
+        "chair_speech_market_impact": "jackson_hole_high_aug",
+        "beige_book_lead": "2_weeks",
+        "waller_speech_sensitivity": "high_2023_onwards"
+      },
+      "causal_chain": "CB 발언 → 단기 금리 선물 재조정 → 2Y 금리 반응 → 주식/채권 동시 변동",
+      "framework": "중앙은행 전략적 모호성(Strategic Ambiguity): 명시적 약속 없이 시장 기대치를 조절. Visual Signaling(강조 표현/테이퍼링 언급 순서)이 핵심."
+    },
+    "cb_spillover_event": {
+      "korean_name": "중앙은행 스필오버",
+      "description": "Fed 결정 → ECB(2주) → BOJ(3주) → BOK(4주) 순서로 파급. 글로벌 동조화 긴축/완화.",
+      "severity": "MEDIUM",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 1,
+        "max": 2
+      },
+      "subject_category": "central_bank_action",
+      "keywords_ko": [
+        "Fed 스필오버",
+        "ECB 동조",
+        "글로벌 긴축 동조화",
+        "CB spillover",
+        "한국은행 동조 인상",
+        "BOK 금리 인상 동조"
+      ],
+      "causal_chain": "Fed 금리 인상 → 달러 강세 → 자본 유출 압력 → EM 중앙은행 방어적 금리 인상 → 신흥국 내수 위축",
+      "framework": "4주 시차 법칙: Fed(0주) → ECB(2주, 달러↑) → BOJ(3주, 환율방어) → BOK(4주, 자본유출 방어)"
+    },
+    "yield_curve_inversion": {
+      "korean_name": "수익률 곡선 역전",
+      "description": "2Y-10Y 금리차 마이너스 진입. 경기침체 선행 지표. 은행 NIM 압박.",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": 2,
+        "max": 5
+      },
+      "subject_category": "macro_trend",
+      "keywords_ko": [
+        "수익률 곡선 역전",
+        "yield curve inversion",
+        "장단기 역전",
+        "2Y-10Y 마이너스",
+        "inverted yield curve",
+        "역전 심화"
+      ],
+      "causal_chain": "단기금리 > 장기금리 → 은행 대출 수익성 하락 → 신용 공급 위축 → 설비투자 감소 → 경기침체 확률 상승",
+      "framework": "역전 후 평균 12~18개월 이내 경기침체. 은행주(XLF) 압박. 크레딧 스프레드 선행 확대."
+    },
+    "yield_curve_steepening": {
+      "korean_name": "수익률 곡선 스티프닝",
+      "description": "장단기 금리차 확대 (역전 해소 또는 Bull/Bear Steepening). 경기 회복 신호 또는 재정 우려 신호.",
+      "severity": "HIGH",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 1,
+        "max": 3
+      },
+      "subject_category": "macro_trend",
+      "keywords_ko": [
+        "수익률 곡선 스티프닝",
+        "yield curve steepening",
+        "장단기 금리차 확대",
+        "term premium 상승",
+        "베어 스티프닝",
+        "bull steepening",
+        "정상화"
+      ],
+      "predicate_notes": "Bull Steepening(단기↓) = 완화 기대 → 주식 긍정. Bear Steepening(장기↑) = 재정 우려 → 채권 부정, 주식 혼조.",
+      "causal_chain": "Bull: 단기금리 하락 → 금융 여건 완화 → 위험 선호. Bear: 장기금리 상승 → BRP 확대 → 장기 성장주 압박",
+      "framework": "BRP(채권 리스크 프리미엄) 체제: 인플레이션 불확실성 + 재정 확대 → Bear Steepening 지속"
+    },
+    "brp_regime_shift": {
+      "korean_name": "채권 리스크 프리미엄 체제 전환",
+      "description": "BRP(Bond Risk Premium)가 음에서 양으로, 또는 양에서 음으로 구조적 전환. 주식-채권 상관관계 역전.",
+      "severity": "HIGH",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 2,
+        "max": 5
+      },
+      "subject_category": "macro_trend",
+      "keywords_ko": [
+        "채권 리스크 프리미엄",
+        "BRP 상승",
+        "term premium 급등",
+        "주식-채권 상관 역전",
+        "안전자산 기능 약화",
+        "채권 분산 효과 소멸"
+      ],
+      "causal_chain": "인플레이션 변동성 상승 → 실질 BRP 확대 → 장기채 매력 감소 → 주식/채권 양방향 하락 (60/40 포트폴리오 위험)",
+      "framework": "Ilmanen BRP 분해: 수익률 = 기대 단기금리 + BRP. BRP 결정요인: 인플레 불확실성, 재정 적자/GDP, 채권 공급, 해외 수요."
+    },
+    "fci_tightening": {
+      "korean_name": "금융여건 지수 긴축",
+      "description": "Goldman Sachs FCI 또는 Bloomberg FCI가 빠르게 상승(긴축 방향). 실물경제 6~9개월 선행 압박.",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": 2,
+        "max": 5
+      },
+      "subject_category": "macro_trend",
+      "keywords_ko": [
+        "금융여건 지수",
+        "FCI 상승",
+        "FCI 긴축",
+        "financial conditions tightening",
+        "신용 여건 악화",
+        "금융 조건 긴축"
+      ],
+      "causal_chain": "금리 인상 + 신용 스프레드 확대 + 주식 하락 → FCI 급등 → 기업 조달 비용 상승 → 투자 위축 → 성장률 하향",
+      "framework": "FCI = f(실질금리, 신용스프레드, 주가, 환율). 1표준편차 FCI 긴축 = 성장률 -0.5~1.0%p 12개월 이내"
+    },
+    "fci_easing": {
+      "korean_name": "금융여건 지수 완화",
+      "description": "FCI 급락 (완화 방향). 실물경제 자극 효과 6~9개월 선행.",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 2,
+        "max": 4
+      },
+      "subject_category": "macro_trend",
+      "keywords_ko": [
+        "FCI 완화",
+        "금융여건 완화",
+        "financial conditions easing",
+        "신용 스프레드 축소",
+        "유동성 개선"
+      ],
+      "causal_chain": "금리 인하 기대 + 신용 스프레드 축소 + 주가 상승 → FCI 하락 → 기업 조달 비용 감소 → 투자 회복"
+    },
+    "credit_spread_spike": {
+      "korean_name": "크레딧 스프레드 급등",
+      "description": "HY 또는 IG 크레딧 스프레드가 단기간 급격히 확대. 시스템 리스크 또는 경기침체 공포 신호.",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": 3,
+        "max": 8
+      },
+      "subject_category": "macro_trend",
+      "keywords_ko": [
+        "크레딧 스프레드 확대",
+        "HY 스프레드 급등",
+        "IG 스프레드 확대",
+        "credit stress",
+        "신용 스프레드 급등",
+        "credit spread spike",
+        "HY OAS 확대"
+      ],
+      "causal_chain": "경기침체 우려 또는 유동성 충격 → HY 스프레드 200bp 이상 → 기업 조달 시장 경색 → Fallen Angel 강등 가속 → 레버리지 투자자 강제 청산",
+      "composite_signals": {
+        "tightening_loop": "HY 스프레드 확대 → FCI 긴축 → 성장 둔화 → HY 추가 확대 (자기강화 루프)",
+        "equity_correlation": "HY 스프레드와 S&P 500 역상관 (R=-0.65~-0.80)"
+      },
+      "base_rate": {}
+    },
+    "fallen_angel_wave": {
+      "korean_name": "폴른엔젤 강등 파동",
+      "description": "대규모 IG(투자등급) 기업이 HY(투기등급)로 강등. 강제 매도 + 비제약 자본 기회.",
+      "severity": "HIGH",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 3,
+        "max": 10
+      },
+      "subject_category": "macro_trend",
+      "keywords_ko": [
+        "폴른엔젤",
+        "Fallen Angel",
+        "신용등급 강등",
+        "IG→HY 강등",
+        "투자등급 탈락",
+        "BBB- 강등",
+        "크레딧 강등 파동",
+        "forced selling"
+      ],
+      "causal_chain": "IG 등급 탈락 → 연금/RBC 자본 기준 위반 → 강제 매도 → 가격 오버슈팅 → 비제약 자본(HY 펀드/기회주의 투자자) 진입 → 가격 복원 6~18개월",
+      "framework": "Ilmanen: 폴른엔젤은 구조적으로 저평가 경향. 강등 직후 -5~15% 추가 하락 후 평균 +20% 회복.",
+      "base_rate": {}
+    },
+    "dollar_squeeze": {
+      "korean_name": "달러 스퀴즈",
+      "description": "글로벌 달러 유동성 급격한 수축. FX 스왑 베이시스 확대, LIBOR-OIS 스프레드 급등. 신흥국 자본 유출.",
+      "severity": "CRITICAL",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": 3,
+        "max": 10
+      },
+      "subject_category": "macro_trend",
+      "keywords_ko": [
+        "달러 스퀴즈",
+        "달러 부족",
+        "dollar squeeze",
+        "FX swap basis 확대",
+        "LIBOR-OIS 급등",
+        "달러 유동성 위기",
+        "유로달러 수축",
+        "offshore dollar shortage"
+      ],
+      "causal_chain": "글로벌 불확실성 → 달러 안전자산 수요 급증 → 역외 달러 공급 부족 → FX 스왑 베이시스 확대 → EM 자산 매도 → 달러 강세 나선",
+      "framework": "BIS 유로달러 시스템: 역외 달러 신용이 글로벌 무역 금융 기반. 수축 시 무역 금융 경색 → 실물 충격. GOFO 음수 전환이 선행 신호."
+    },
+    "global_pmi_inflection": {
+      "korean_name": "글로벌 PMI 반전",
+      "description": "글로벌 제조업 PMI가 50 기준선 상하로 반전. 경기 사이클 전환점 확인.",
+      "severity": "HIGH",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 2,
+        "max": 4
+      },
+      "subject_category": "macro_indicator_release",
+      "keywords_ko": [
+        "글로벌 PMI 반전",
+        "제조업 PMI 회복",
+        "PMI 50 상향 돌파",
+        "PMI 50 하향 이탈",
+        "글로벌 경기 반전",
+        "ISM 50 이탈",
+        "ISM 반등"
+      ],
+      "causal_chain": "PMI 50 상향 → 글로벌 제조 사이클 회복 → 원자재 수요 증가 → EM 수혜 + 원자재 상승. PMI 50 하향 → 역방향",
+      "framework": "4경제 사이클: PMI는 Expansion→Slowdown→Contraction→Recovery 사이클 위치 확인 핵심 지표"
+    },
+    "erp_compression": {
+      "korean_name": "주식 리스크 프리미엄 압축",
+      "description": "ERP(Equity Risk Premium)가 역사적 평균 대비 과도하게 낮아짐. 주식 고평가 신호.",
+      "severity": "MEDIUM",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": 2,
+        "max": 5
+      },
+      "subject_category": "macro_trend",
+      "keywords_ko": [
+        "주식 리스크 프리미엄 압축",
+        "ERP 축소",
+        "equity risk premium 하락",
+        "CAPE 고평가",
+        "Shiller PE 고점",
+        "주식 고평가",
+        "밸류에이션 버블"
+      ],
+      "causal_chain": "저금리 장기화 → 미래 수익 현재가치 극대화 → CAPE/ERP 과압축 → 금리 정상화 시 밸류에이션 충격",
+      "framework": "Ilmanen ERP 공식: ERP = E/P - 실질금리 - 인플레이션 프리미엄. CAPE 30+ = ERP < 2% = 역사적 저점 구간"
+    },
+    "erp_expansion": {
+      "korean_name": "주식 리스크 프리미엄 확대",
+      "description": "ERP가 역사적 평균 상단으로 확대. 주식 저평가 또는 리스크 오프 신호.",
+      "severity": "MEDIUM",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 2,
+        "max": 5
+      },
+      "subject_category": "macro_trend",
+      "keywords_ko": [
+        "ERP 확대",
+        "주식 리스크 프리미엄 상승",
+        "equity risk premium 확대",
+        "주식 저평가",
+        "리스크 프리미엄 확대"
+      ],
+      "causal_chain": "불확실성 급증 → 주가 하락 + 채권 안전자산 수요 → ERP 급확대 → 장기 투자자 매수 기회"
+    },
+    "real_rate_surge": {
+      "korean_name": "실질금리 급등",
+      "description": "명목금리 상승 or 인플레이션 기대 하락으로 실질금리(TIPS) 급격히 상승. 장기 성장주 압박.",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": 3,
+        "max": 7
+      },
+      "subject_category": "macro_trend",
+      "keywords_ko": [
+        "실질금리 급등",
+        "TIPS 금리 상승",
+        "real rate 급등",
+        "10Y TIPS yield 급등",
+        "실질 수익률 상승",
+        "인플레이션 조정 금리 상승"
+      ],
+      "causal_chain": "명목금리 급등 or 인플레이션 기대 하락 → 실질금리 상승 → 장기 현금흐름 할인율 상승 → 성장주/테크 밸류에이션 압박 → 금 압박",
+      "framework": "실질금리 = 성장주 P/E의 역. TIPS 10Y +1%p = Nasdaq 기대 P/E 약 -5~10 포인트"
+    },
+    "fiscal_dominance_signal": {
+      "korean_name": "재정 우위 신호",
+      "description": "정부 부채/재정 적자가 통화정책을 압도. 중앙은행 독립성 훼손 우려. 장기 인플레이션 구조화.",
+      "severity": "HIGH",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 2,
+        "max": 5
+      },
+      "subject_category": "macro_trend",
+      "keywords_ko": [
+        "재정 우위",
+        "fiscal dominance",
+        "재정 적자 확대",
+        "부채 한도",
+        "재정 통화화",
+        "debt monetization",
+        "재정 리스크 프리미엄",
+        "국채 공급 증가"
+      ],
+      "causal_chain": "재정 적자 확대 → 국채 순발행 급증 → BRP 상승 → Bear Steepening → 실질금리 상승 → 성장 압박",
+      "framework": "Ilmanen: 재정 적자/GDP 비율이 BRP의 핵심 결정 요인. 미국 적자 7%+ = 구조적 BRP 상승 압력"
+    },
+    "financial_repression_regulation": {
+      "korean_name": "금융억압 규제",
+      "description": "정부가 금융기관에 국채 보유 의무화/수익률 상한 규제 등으로 실질금리를 인위적으로 낮게 유지. 부채 비율 축소.",
+      "severity": "MEDIUM",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": 1,
+        "max": 3
+      },
+      "subject_category": "policy_action",
+      "keywords_ko": [
+        "금융억압",
+        "financial repression",
+        "국채 강제 보유",
+        "예금 금리 상한",
+        "실질금리 음수",
+        "수익률 상한 규제",
+        "자본 통제"
+      ],
+      "causal_chain": "실질금리 음수 규제 → 채권 투자자 구매력 잠식 → 대체 자산(금/원자재/부동산) 수요 → 인플레이션 헤지 수요 증가"
+    },
+    "macro_regime_transition": {
+      "korean_name": "거시 레짐 전환",
+      "description": "OVERHEATING→CONTRACTION, EXPANSION→STAGFLATION 등 4-레짐 간 전환. 자산 배분 전면 재조정 신호.",
+      "severity": "CRITICAL",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 3,
+        "max": 10
+      },
+      "subject_category": "macro_trend",
+      "keywords_ko": [
+        "레짐 전환",
+        "regime change",
+        "경기 국면 전환",
+        "인플레이션→디플레이션",
+        "경기 사이클 전환",
+        "매크로 패러다임 전환"
+      ],
+      "causal_chain": "성장+인플레이션 z-score 조합 변화 → 4-레짐 재분류 → 자산별 기대수익 전면 재산정",
+      "regime_map": {
+        "OVERHEATING": "Growth↑ + Inflation↑ → 원자재↑, 채권↓, 성장주↓",
+        "EXPANSION": "Growth↑ + Inflation 중립 → 주식↑, 크레딧↑",
+        "CONTRACTION": "Growth↓ + Inflation 중립 → 채권↑, 현금↑, 방어주↑",
+        "STAGFLATION": "Growth↓ + Inflation↑ → 금↑, 원자재↑, 모든 자산 어려움"
+      }
+    },
+    "credit_fund_liquidity_crisis": {
+      "korean_name": "크레딧 펀드 유동성 위기",
+      "description": "HY/사모대출 펀드에서 대규모 환매 요청 → 유동성 없는 자산 강제 매각. 크레딧 시장 전반 경색.",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": 3,
+        "max": 8
+      },
+      "subject_category": "market_structure",
+      "keywords_ko": [
+        "크레딧 펀드 환매",
+        "HY 펀드 환매 급증",
+        "사모대출 유동성",
+        "credit fund redemption",
+        "공모 HY 펀드 유동성 위기",
+        "기간 불일치"
+      ],
+      "causal_chain": "HY 스프레드 급등 → 투자자 환매 → 펀드 유동성 불량 자산 강제 매각 → 스프레드 추가 확대 (하향 나선)",
+      "framework": "유동성 착각(Liquidity Illusion): 공모 HY 펀드는 일별 환매 제공 / 보유 자산은 주간 이상 유동성 → 위기 시 구조적 불균형"
+    },
+    "treasury_tbill_surge": {
+      "korean_name": "재무부 단기채 급증 발행 (스텔스 유동성)",
+      "description": "재무부가 장기채 대신 단기채(T-bill) 발행 비중을 20% 이상으로 확대. MMF가 RRP 자금을 단기채로 이동 → 재무부 TGA 충전 → 지출로 시중 유동성 공급. Fed QT를 무력화하는 스텔스 완화.",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 1,
+        "max": 3
+      },
+      "subject_category": "macro_trend",
+      "keywords_ko": [
+        "T-bill 발행 확대",
+        "단기채 발행 급증",
+        "재무부 단기채",
+        "T-bill issuance surge",
+        "TBAC 권고",
+        "단기채 비중 상승",
+        "빌 발행"
+      ],
+      "causal_chain": "재무부 T-bill 발행 비중 >20% → MMF가 ON RRP 자금 → T-bill 매수 → RRP 잔액 하락 + TGA 상승 → 재무부 지출로 시중 방출 → 파월 QT 무력화",
+      "framework": "옐런-파월 치킨게임: Fed는 QT로 조이고, 재무부는 단기채 발행으로 우회 유동성 공급. 금리 인하 역설: 금리↓ → MBS 조기상환 급증 → Fed QT 실효량 증가 → 유동성 의도치 않게 흡수",
+      "quantitative_triggers": {
+        "signal": "T-bill 비중 > 20% (TBAC 권고치 초과)",
+        "effect": "RRP 잔액 -$1T 당 시중 유동성 +$1T (1:1 이동)"
+      }
+    },
+    "cb_language_code_change": {
+      "korean_name": "중앙은행 언어 코드 변화",
+      "description": "중앙은행 성명/발언에서 특정 핵심 단어의 추가·삭제·교체. 단어 변화 하나가 6~12개월 정책 방향을 시그널.",
+      "severity": "HIGH",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 1,
+        "max": 3
+      },
+      "subject_category": "central_bank_action",
+      "keywords_ko": [
+        "Fedspeak 변화",
+        "일시적→지속적",
+        "transitory 삭제",
+        "patient 삭제",
+        "당분간",
+        "상당 기간",
+        "충분히 장기간",
+        "점도표 언어 변화",
+        "포워드 가이던스 키워드"
+      ],
+      "language_time_codes": {
+        "당분간_유지": "약 3개월. 예: 한은 '완화적 기조를 당분간 유지' → 단기 고정",
+        "상당_기간_지속": "약 6개월. 예: 2018년 Fed 점진적 긴축기 → 6개월 선행 포지션",
+        "충분히_장기간": "1년 이상. 예: 2022-23 이창용 '통화 긴축 기조를 충분히 장기간 지속' → 장기채 매도 전략",
+        "Considerable→Some_time": "Fed 긴축 임박 시그널",
+        "Patient_삭제": "Fed 정책 전환 임박",
+        "Transitory→Persistent": "성장주 청산·가치주 전환 강력 신호",
+        "PBoC_침묵_30일": "중국 A주 레인지 트레이딩 유지",
+        "PBoC_침묵_해제": "즉시 포지션 청산 (중대 정책 전환)"
+      },
+      "causal_chain": "CB 핵심 단어 변화 → 금리 선물 재조정 → 시장 전체 재포지셔닝",
+      "base_rate": {
+        "patient_to_data_dependent_spy": 0.8,
+        "dot_plot_revision_impact": "high",
+        "ecb_lagarde_tone_sensitivity": "moderate",
+        "boj_ycc_language_yen_sensitivity": "very_high"
+      }
+    },
+    "sahm_rule_trigger": {
+      "korean_name": "샴 룰 발동 (EM 얼리사이클 진입)",
+      "description": "실업률 3개월 평균이 직전 12개월 최저치보다 0.5%p 이상 상승 → 경기침체 확정 신호. 역설적으로 EM 주식 얼리사이클 진입 최적 시점.",
+      "severity": "HIGH",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 5,
+        "max": 15
+      },
+      "subject_category": "macro_indicator_release",
+      "keywords_ko": [
+        "샴 룰",
+        "Sahm Rule",
+        "실업률 0.5%p 상승",
+        "경기침체 확정",
+        "recession trigger",
+        "실업률 급등",
+        "노동시장 악화"
+      ],
+      "predicate_map": {
+        "us_equities": "drive_underperformance",
+        "em_equities": "drive_outperformance",
+        "us_bonds": "drive_outperformance",
+        "commodities": "mixed"
+      },
+      "causal_chain": "샴 룰 발동 → 미국 침체 확정 → Fed 완화 전환 기대 → 달러 약세 → EM 자본 유입 → EM 주식 얼리사이클 랠리",
+      "framework": "EM은 전형적 얼리사이클 자산: 샴 룰 발동 직후 6~12개월 EM이 DM 대비 아웃퍼폼. 단, PMI 글로벌 반등 + RRP 소진 동반 시 확신도 증가",
+      "quantitative_triggers": {
+        "signal": "3개월 실업률 평균 - 직전 12개월 최저 실업률 ≥ 0.5%p",
+        "em_outperform_historical": "발동 후 12개월 EM vs DM 평균 +8%"
+      },
+      "base_rate": {
+        "immediate_spy_pct": -2.5,
+        "10y_rally_bp": -15,
+        "historical_recession_rate": 1.0,
+        "false_positive_risk": "low",
+        "typical_trigger_threshold": 0.5
+      }
+    },
+    "china_credit_impulse_turn": {
+      "korean_name": "중국 신용 임펄스 반전",
+      "description": "중국 크레딧 임펄스(신용 증가 가속도)가 마이너스에서 플러스로 전환 또는 5% 수준으로 가속. 글로벌 원자재 + A주 선행 상승 촉매.",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 5,
+        "max": 20
+      },
+      "subject_category": "macro_indicator_release",
+      "keywords_ko": [
+        "크레딧 임펄스",
+        "credit impulse",
+        "중국 신용 증가",
+        "M2 증가",
+        "사회융자총량",
+        "TSF 가속",
+        "중국 부양책 효과",
+        "PBoC 유동성 공급"
+      ],
+      "predicate_map": {
+        "china_a_shares": "drive_outperformance",
+        "commodities": "support",
+        "em_equities": "support"
+      },
+      "causal_chain": "중국 PBoC 유동성 공급 + 재정 확장 → 사회융자총량(TSF) 증가 → 크레딧 임펄스 반전 → 기업 투자 회복 → 원자재 수요 증가 → 글로벌 제조업 PMI 개선",
+      "quantitative_triggers": {
+        "signal": "크레딧 임펄스 YoY > +5% (GDP 대비 신규 신용 증가)",
+        "historical_effect": "A주 +15% (6~12개월 내), 구리 +10~20%"
+      },
+      "base_rate": {
+        "observed_n": 3,
+        "observed_t0_mean": "+4.3%",
+        "observed_t5_mean": "-2.9%",
+        "observed_t20_mean": "-8.0%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=3/3 (actor_ticker 확보 케이스)"
+      }
+    },
+    "em_dm_rotation": {
+      "korean_name": "EM/DM 자산 로테이션",
+      "description": "신흥국(EM)과 선진국(DM) 자산간 대규모 자금 이동. 달러 사이클 + EM EPS 성장 + G7 yield curve + PMI 복합 신호로 결정.",
+      "severity": "HIGH",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 5,
+        "max": 20
+      },
+      "subject_category": "market_structure",
+      "keywords_ko": [
+        "EM 아웃퍼폼",
+        "EM 랠리",
+        "신흥국 자금 유입",
+        "달러 약세 EM",
+        "EM DM 로테이션",
+        "EM 언더퍼폼",
+        "자본 유출 EM"
+      ],
+      "em_outperform_conditions": {
+        "달러_약세": "투기적 달러 순매수 포지션 축소 (미결제 36% → 하락 시)",
+        "EPS_스프레드": "EM EPS 성장률 > DM EPS 성장률",
+        "G7_커브_스티프닝": "G7 장단기 금리차 확대 (경기민감 자산 선호)",
+        "PMI": "글로벌 제조업 PMI > 51 AND EM 신규주문/재고 비율 > 1.04x",
+        "샴룰_직후": "미국 침체 발동 직후 12개월 EM 얼리사이클"
+      },
+      "causal_chain": "달러 약세 전환 + EM EPS 가속 → 글로벌 펀드 EM 비중 확대 → EM 주식 멀티플 재평가",
+      "framework": "CLSA 2024: 13년 달러 강세 피로도 누적. 투기 달러 매수 미결제 36%. PMI 51+ AND EM NI/재고 1.08x (2024 실제값) = 강력 EM 매수 신호"
+    },
+    "geopolitical_constraint_binding": {
+      "korean_name": "지정학적 제약 구속",
+      "description": "정치 지도자의 '선호(Preferences)'가 아닌 '제약(Constraints)'이 정책 방향을 결정짓는 이벤트. 시장이 과대/과소평가한 지정학 리스크 조정.",
+      "severity": "HIGH",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 2,
+        "max": 10
+      },
+      "subject_category": "geopolitics",
+      "keywords_ko": [
+        "지정학 제약",
+        "무역 관세 권한",
+        "의회 권한 이양",
+        "301조 발동",
+        "행정명령",
+        "환율 조작국",
+        "지정학 리스크 재평가"
+      ],
+      "five_myths_framework": {
+        "myth_1": "지정학 Nice-to-have → Must-have: 데이터 기반 선제 대응",
+        "myth_2": "여론조사 무용 → 전문가 해석이 틀림: Pew 장기 데이터 활용",
+        "myth_3": "예측 불가 → Beat the spread: 시장 과대/과소평가 비효율 공략",
+        "myth_4": "특정 정치인 예측불가 → 선호<제약: 제약은 절대적, 선호는 선택적",
+        "myth_5": "정치인=가격결정자 → 중위투표자가 진짜 결정자"
+      },
+      "causal_chain": "지정학적 제약 구속 (의회 권한 이양 등) → 시장이 무시하던 리스크 현실화 → 자산 재평가",
+      "example": "미 의회가 무역관세 권한을 행정부에 이양 → 트럼프 보호무역 현실화 가능 → 관세 리스크 재평가",
+      "base_rate": {}
+    },
+    "us_china_decoupling_escalation": {
+      "korean_name": "미중 디커플링 격화",
+      "description": "미국-중국간 무역·기술·금융 분리 가속. 공급망 재편, 반도체 수출 통제, 금융 디리스킹.",
+      "severity": "HIGH",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 3,
+        "max": 8
+      },
+      "subject_category": "geopolitics",
+      "keywords_ko": [
+        "미중 디커플링",
+        "US-China decoupling",
+        "반도체 수출 통제",
+        "Entity List",
+        "관세 확대",
+        "공급망 재편",
+        "China+1",
+        "금융 디리스킹",
+        "중국 자산 매각"
+      ],
+      "causal_chain": "미중 갈등 격화 → 기술 수출 통제 강화 → 반도체/AI 공급망 재편 → 한국/대만/인도 수혜 or 피해 분기",
+      "predicate_map": {
+        "korea_semiconductor": "support (China+1 수혜)",
+        "taiwan_semiconductor": "elevate_risk (지정학 리스크)",
+        "china_tech": "drive_underperformance",
+        "india_manufacturing": "support (리쇼어링 수혜)"
+      }
+    },
+    "inflation_sweet_spot": {
+      "korean_name": "인플레이션 스윗스팟 진입/이탈",
+      "description": "CPI가 1~4% '스윗스팟' 구간에 진입하거나 이탈. Sombrero Effect — 이 구간에서 주식 P/E 배수 극대화.",
+      "severity": "MEDIUM",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 2,
+        "max": 5
+      },
+      "subject_category": "macro_indicator_release",
+      "keywords_ko": [
+        "인플레이션 스윗스팟",
+        "CPI 2%대 안착",
+        "골디락스",
+        "disinflation landing",
+        "물가 안정",
+        "CPI 4% 돌파",
+        "디플레이션 우려"
+      ],
+      "causal_chain": "CPI 1~4% → 거시 불확실성 최소화 → 주식 밸류에이션 배수 극대화 (Money Illusion 해소). CPI <1% or >4% → 밸류에이션 압박",
+      "framework": "Ilmanen Sombrero Effect: P/E 배수는 인플레이션의 비선형 함수. CPI 2% = 주식 황금 구간. 디플레이션/고인플레이션 모두 주식에 불리."
+    },
+    "labor_productivity_release": {
+      "korean_name": "노동생산성 지표 발표 (시간당 산출량)",
+      "description": "미국 노동부 비농업부문 시간당 산출량(Output Per Hour, Nonfarm Business) 분기별 발표. GS 15년 연구(2010~2024)에서 S&P500 일평균 절대 변동성 유발 #1 매크로 이벤트 (평균 87 bps). FOMC 회의(84 bps), NFP(81 bps)를 상회.",
+      "severity": "HIGH",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 1,
+        "max": 3
+      },
+      "subject_category": "macro_indicator_release",
+      "keywords_ko": [
+        "시간당 산출량",
+        "노동생산성",
+        "output per hour",
+        "단위노동비용",
+        "생산성 발표",
+        "BLS 생산성",
+        "비농업부문 생산성"
+      ],
+      "base_rate": {
+        "spy_abs_move": "평균 87 bps 절대 변동 (GS 2024, S&P500 비이벤트일 대비 최고 — 47개 ETF 중 #1)",
+        "most_reactive_etfs": "XLP(소비재), FXY(엔화), 고정금리(HYG/IEF), 국제(EWG/EWU/VGK/FEZ)",
+        "persistence_window": "1년 롤링 윈도우 기준 방향성 패턴 지속 (GS: 2~3년 lookback보다 1년이 예측력 우수)",
+        "positive_bias": "S&P500은 매크로 이벤트일에 15/15년 중 14년 양의 수익률 기록 (비이벤트일은 7/15년)"
+      },
+      "causal_chain": "노동생산성 상회 → 단위노동비용(ULC) 하락 → 기업 마진 압박 완화 + 인플레이션 우려 감소 → 채권 강세 + 주식 복합 반응. 생산성 하회 → 스태그플레이션 리스크 상승 → 채권 매도 + 달러 강세",
+      "framework": "GS Macro Catalyst 모델: 매크로 이벤트의 역사적 시장 반응 패턴이 미래 이벤트 예측에 유용 (연환산 +6.2% CAGR, 54% hit rate). 이벤트 중요도는 시간에 따라 변화 — 최근 1년 반응이 2~3년보다 신뢰도 높음"
+    },
+    "cpi_release": {
+      "label": "CPI Release",
+      "description": "미국 소비자물가지수 발표 — 인플레이션 기대 재조정",
+      "tier": "T1",
+      "cadence": "monthly",
+      "gs_market_impact_rank": 10,
+      "base_rate": {
+        "spy_per_0_1ppt_surprise": -0.7,
+        "10y_per_0_1ppt_surprise_bp": 6.0,
+        "gold_inverse_correlation": true,
+        "usd_positive_correlation": true,
+        "high_vol_months": [
+          1,
+          4,
+          7,
+          10
+        ],
+        "1h_vs_close_drift": "1h_dominant",
+        "gs_15yr_market_impact_rank": 10,
+        "gs_15yr_avg_bps": 73,
+        "stale_data_risk": "low"
+      }
+    },
+    "nfp_release": {
+      "label": "NFP / Non-Farm Payrolls",
+      "description": "미국 비농업 고용 발표 — 노동시장 강도 가늠",
+      "tier": "T1",
+      "cadence": "monthly_first_friday",
+      "gs_market_impact_rank": 4,
+      "base_rate": {
+        "gs_15yr_market_impact_rank": 4,
+        "gs_15yr_avg_bps": 81,
+        "spy_per_100k_surprise": 0.4,
+        "10y_per_100k_surprise_bp": 4.5,
+        "unemployment_rate_co_release": true,
+        "sahm_rule_trigger_threshold": 0.5,
+        "revision_impact": "moderate",
+        "high_vol_months": [
+          1,
+          4,
+          7,
+          10
+        ]
+      }
+    },
+    "fomc_rate_decision": {
+      "label": "FOMC Rate Decision",
+      "description": "연준 금리 결정 + 기자회견 — 통화정책 전환점",
+      "tier": "T1",
+      "cadence": "8x_per_year",
+      "gs_market_impact_rank": 3,
+      "base_rate": {
+        "gs_15yr_market_impact_rank": 3,
+        "gs_15yr_avg_bps": 84,
+        "hawkish_spy_pct": -1.1,
+        "dovish_spy_pct": 1.1,
+        "dot_plot_months": [
+          3,
+          6,
+          9,
+          12
+        ],
+        "press_conference_all_meetings": true,
+        "post_fomc_drift_days": 3,
+        "blackout_period_days": 10,
+        "ecb_lag_weeks": 2,
+        "boj_divergence_yen_sensitivity": "high",
+        "fed_funds_futures_lead": true
+      }
+    },
+    "ism_release": {
+      "label": "ISM Manufacturing / Services PMI",
+      "description": "ISM 제조업/서비스업 PMI — 경기 선행 지표",
+      "tier": "T1",
+      "cadence": "monthly",
+      "gs_market_impact_rank": 2,
+      "base_rate": {
+        "gs_15yr_market_impact_rank": 2,
+        "gs_15yr_avg_bps": 85,
+        "expansion_threshold": 50,
+        "spy_above50_drift_5d": 0.6,
+        "spy_below50_drift_5d": -0.8,
+        "new_orders_sub_index_lead": 2,
+        "employment_sub_index_nfp_correlation": 0.65,
+        "mfg_vs_services_divergence": "services_dominant_post2010"
+      }
+    },
+    "gdp_release": {
+      "label": "GDP Advance / Revised / Final",
+      "description": "미국 GDP 성장률 발표 (속보 / 수정 / 확정)",
+      "tier": "T1",
+      "cadence": "quarterly_3x",
+      "gs_market_impact_rank": 7,
+      "base_rate": {
+        "gs_15yr_avg_bps": 60,
+        "advance_vs_revised_market_impact": "advance_dominant",
+        "revision_impact": "low",
+        "pce_deflator_embedded": true,
+        "gdpnow_forecast_lead": true,
+        "spy_per_1ppt_surprise": 0.5
+      }
+    },
+    "fx_intervention": {
+      "korean_name": "중앙은행 FX 개입",
+      "description": "중앙은행이 환율을 직접 조정하기 위해 외환시장에 개입. 추세를 일시적으로 늦출 수 있으나 통화정책 방향과 불일치 시 실패.",
+      "severity": "MEDIUM",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 1,
+        "max": 3
+      },
+      "subject_category": "central_bank_action",
+      "predicate_map": {
+        "target_currency": "decelerate",
+        "em_currency": "support"
+      },
+      "keywords_ko": [
+        "FX 개입",
+        "외환시장 개입",
+        "달러 매도 개입",
+        "달러 매수 개입",
+        "BOK FX 개입",
+        "BOJ 구두 개입",
+        "스무딩 오퍼레이션",
+        "smoothing operation",
+        "currency intervention",
+        "환율 방어"
+      ],
+      "causal_chain": "중앙은행 외환 매수/매도 → 일시적 환율 방향 반전 → 통화정책과 일치하면 지속 / 불일치 시 단기 효과만",
+      "base_rate": {
+        "success_condition": "통화정책 방향 일치 시 지속 (1985 플라자합의 성공 사례)",
+        "failure_condition": "통화정책과 역방향 시 실패 (2003-04 BOJ 개입: 엔 강세 지속)",
+        "typical_reversal_days": "3~10일 (통화정책 미지지 시)",
+        "krw_boj_comparison": "BOK 스무딩 오퍼레이션: 방향성 전환 아닌 속도 조절 목적"
+      },
+      "framework": "JPM FX 개입 효과 원칙: 개입은 추세를 잠시 늦출 수 있지만 펀더멘털을 역전시킬 수 없다 (Normand, 2012)"
+    },
+    "carry_trade_unwind": {
+      "korean_name": "글로벌 캐리 청산",
+      "description": "고금리 통화 조달 포지션(달러/EM 캐리 포함)의 광범위한 급격한 청산. yen_carry_unwind의 상위 개념으로 달러 조달 EM 캐리 포함.",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": 3,
+        "max": 10
+      },
+      "subject_category": "macro_trend",
+      "predicate_map": {
+        "em_currency": "drive_underperformance",
+        "em_equity": "elevate_risk",
+        "usd": "drive_outperformance",
+        "vix": "elevate_risk"
+      },
+      "keywords_ko": [
+        "캐리 트레이드 청산",
+        "carry trade unwind",
+        "글로벌 캐리 청산",
+        "EM 캐리 청산",
+        "달러 캐리 청산",
+        "위험자산 청산",
+        "캐리 포지션 청산",
+        "risk-off 캐리",
+        "carry reversal",
+        "EM 자본 유출",
+        "risk unwind"
+      ],
+      "causal_chain": "리스크오프 충격 또는 변동성 급등 → 캐리-투-리스크 악화 → 고금리 통화 매도 + 저금리 통화 환수 → EM FX 급락 + VIX 추가 상승 → 강제 디레버리징 연쇄",
+      "base_rate": {
+        "em_fx_typical_drop": "-5~15% (EM 통화 기준, 1~2주)",
+        "vix_spike": "+8~20pt",
+        "carry_to_risk_threshold": "캐리-투-리스크 < 0.3 → 청산 위험 고조",
+        "recovery_weeks": "4~12주 (리스크온 복귀 후)",
+        "yen_carry_relation": "yen_carry_unwind가 트리거인 경우 포함, 달러 캐리 청산은 별개 사례"
+      },
+      "framework": "JPM FX: EM carry IR=0.8 (G-10 carry 0.6 대비 우위). 청산 시 EM 충격 더 크고 빠름. Carry-to-risk = 1mo Libor 차이 ÷ 12mo 실현변동성."
+    },
+    "dollar_cycle_shift": {
+      "korean_name": "달러 장기 사이클 전환",
+      "description": "5~10년 주기 달러 강세→약세 또는 약세→강세의 구조적 전환. 경상수지 + Fed 정책 선도 + 위험선호도의 복합 결정.",
+      "severity": "HIGH",
+      "direction": "mixed",
+      "impact_pct": {
+        "typical": 5,
+        "max": 20
+      },
+      "subject_category": "macro_trend",
+      "predicate_map": {
+        "em_asset": "drive_outperformance",
+        "commodity": "drive_outperformance",
+        "us_equity": "drive_underperformance",
+        "gold": "support"
+      },
+      "keywords_ko": [
+        "달러 사이클 전환",
+        "dollar cycle shift",
+        "달러 구조적 약세",
+        "달러 장기 약세",
+        "USD secular decline",
+        "기축통화 지위 약화",
+        "달러 헤게모니",
+        "탈달러화",
+        "de-dollarization",
+        "경상수지 달러",
+        "dollar weakness structural"
+      ],
+      "causal_chain": "경상수지 적자 >GDP 3% + Fed 완화 선도 + 위험선호 확대 → 달러 약세 사이클 → EM/원자재/금 강세 → KOSPI 외국인 유입 + KRW 강세",
+      "base_rate": {
+        "historical_cycles": "1971~1985 강세 → 1985~1995 약세 → 1995~2002 강세 → 2002~2011 약세 → 2011~2022 강세",
+        "em_12m_return_weak_dollar": "+8% (달러 약세 사이클 EM 12개월 수익)",
+        "commodity_return_weak_dollar": "+10~20% (Brent, Copper 기준)",
+        "weak_dollar_conditions": "경상수지 >3%GDP + Fed 완화 선도 (Normand, 2012)",
+        "korea_fx_sensitivity": "KRW/USD: 달러 약세 5% → KOSPI 외국인 순매수 +~4B (역사적 관찰)"
+      },
+      "framework": "JPM FEER 모델: REER = f(교역조건, 생산성, 정부부채, NII). 달러 기축통화 프리미엄: 장기국채 -50bp. 약화 조건: USD 경상수지 >3%GDP."
+    }
+  },
+  "extraction_rules": {
+    "key_principles": [
+      "매크로 이벤트는 개별 종목 object_entity_id 불필요 — 자산군(equity_index/bond_market/commodity/fx)으로 매핑",
+      "중앙은행 이벤트(fed_pivot/qt_*/ycc_band_adjustment/forward_guidance_shift): subject_category='central_bank_action'",
+      "유동성 이벤트(tga_release/rrp_drawdown/dollar_squeeze): subject_category='macro_trend'",
+      "금융조건 이벤트(fci_tightening/credit_spread_spike): subject_category='macro_trend'",
+      "구조적 이벤트(fallen_angel_wave/brp_regime_shift/macro_regime_transition): subject_category='macro_trend'",
+      "레짐 전환은 가장 광범위한 영향 → CRITICAL 등급"
+    ],
+    "vs_signal_master": {
+      "차이점": "SIGNAL-MASTER는 현재 지표값(FRED 시계열)을 트래킹. macro_event_vocabulary는 발생 이벤트(정책 결정/체제 전환)를 분류.",
+      "보완 관계": "YCC 조정(이벤트) + JGB 금리 수준(SIGNAL) = 완전한 이해. fed_pivot(이벤트) + FFR 추적(SIGNAL) = 정책 방향 확인"
+    },
+    "composite_signals": {
+      "liquidity_triangle": "TGA 방출 + RRP 소진 + QT 중단 → 동시 발생 시 유동성 급증 = 강력 리스크 온",
+      "yen_carry_risk": "YCC 밴드 조정 + JPY 강세 + VIX 상승 → 엔 캐리 청산 조건 = 글로벌 디레버리징",
+      "bear_steepening_regime": "재정 우위 신호 + BRP 상승 + 실질금리 급등 → 성장주 구조적 압박"
+    }
+  },
+  "vs_existing_system": {
+    "note": "기존 시스템(SIGNAL-MASTER/regime_detector/macro_ml_engine)과의 역할 분담",
+    "signal_master": "FRED 17개 지표 실시간 값 추적 (현재 상태)",
+    "regime_detector": "Growth+Inflation+Liquidity z-score → 4-레짐 분류 (현재 레짐)",
+    "macro_ml_engine": "29개 피처 × 7 자산 ML 예측 (미래 방향)",
+    "macro_event_vocabulary": "발생 이벤트 유형 분류 → CAUSAL 패턴 품질 개선 (이벤트 → 자산 반응 패턴)"
+  }
+}

@@ -1,0 +1,42 @@
+# theme_radar 프로젝트 환경 설정 — 신규 사용자용 예시.
+#   사용법:
+#     1. 이 파일을 config/project.yaml 로 복사
+#     2. 본인 환경에 맞게 경로 수정
+#     3. 또는 init_project.py 가 자동 생성
+#
+# 외부 통합 (geopolitical_investor / investment_ontology) 은 모두 옵션.
+# 가지고 있지 않으면 enabled: false 로 설정 → 정상 작동.
+
+vault:
+  # Obsidian Vault 경로.
+  # 로컬: "./vault" (프로젝트 내부) — git 외부에서 관리
+  # iCloud (macOS): "/Users/<USER>/Library/Mobile Documents/iCloud~md~obsidian/Documents/<vault_name>"
+  path: "./vault"
+
+region:
+  # 채널 데이터의 주요 시장. "KR" / "US" / "JP" / "OTHER"
+  # KR이면 build_krx_whitelist 활용 가능.
+  code: KR
+
+extraction:
+  # OpenAI 추출 모델
+  model: gpt-5.4-nano
+
+integrations:
+  # geopolitical_investor 프로젝트로 catalysts.yaml 단방향 작성 (옵션)
+  # 안 가지고 있으면 enabled: false
+  geopolitical_investor:
+    enabled: false
+    catalysts_yaml: ""  # 예: "/path/to/geopolitical_investor/data/catalysts.yaml"
+
+  # investment_ontology 의 vocabulary snapshot (옵션)
+  # macro/corporate event 분류·regime conditioning·phase tracking에 사용
+  # 안 가지고 있으면 enabled: false → 분류 stage 자동 스킵
+  vocabulary_snapshots:
+    enabled: false
+    sources:
+      # 각 항목 빈 string이면 해당 vocabulary 비활성
+      macro_event: ""        # 예: "/path/to/investment_ontology/macro_event_vocabulary.json"
+      corporate_event: ""    # 예: "/path/to/investment_ontology/corporate_event_vocabulary.json"
+      regime_state: ""       # 예: "/path/to/investment_ontology/.../SIGNAL-REGIME.md"
+      phase_kb: ""           # 예: "/path/to/macro_events_driven_investments/historical_price_reactions.json"

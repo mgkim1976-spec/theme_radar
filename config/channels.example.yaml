@@ -1,0 +1,28 @@
+# theme_radar 채널 리스트 — 신규 사용자용 예시.
+#   사용법:
+#     1. 이 파일을 config/channels.yaml 로 복사 후 본인 채널로 수정
+#     2. 또는 init_project.py --channels=channels.txt 로 자동 생성
+#
+# 필드:
+#   channel_id : YouTube 채널 ID (UC + 22자)
+#   name       : 사람이 읽는 채널명
+#   style      : 한 줄 스타일 (방법론 합성 hint)
+#   lens       : macro / top-down / sector / bottom-up (lens_presets.yaml 키)
+#   stock_weight (선택, override): 명시값. 없으면 lens preset 기본값.
+#                  실제 사용값은 data/reference/compiled/channel_weights.json
+#                  (auto_tune_weights가 forward returns 기반으로 자동 갱신)
+
+channels:
+  # 예시 1: 매크로 분석가
+  example_macro_channel:
+    name: "예시 매크로 채널"
+    channel_id: UC0000000000000000000001  # 실제 ID로 교체
+    style: "매크로·정책 위주"
+    lens: macro
+
+  # 예시 2: 종목 트레이더
+  example_bottom_up_channel:
+    name: "예시 개별주식 채널"
+    channel_id: UC0000000000000000000002  # 실제 ID로 교체
+    style: "트레이딩 + 개별주식"
+    lens: bottom-up

@@ -1,0 +1,23 @@
+# Lens presets — 채널 추가 시 lens 만 지정하면 stock_weight·max_videos_per_run 자동 적용.
+# config/channels.yaml 에서 channel별 override 가능.
+#
+# stock_weight: theme×stock 매트릭스에서 종목 attribution 가중치.
+#   이 값은 default; auto_tune_weights가 forward returns 기반으로 동적 갱신.
+# max_videos_per_run: 일일 fetch 한도 (rate limit 보호).
+
+lens_presets:
+  macro:
+    stock_weight: 0.6
+    max_videos_per_run: 20
+
+  top-down:
+    stock_weight: 0.8
+    max_videos_per_run: 30
+
+  sector:
+    stock_weight: 0.9
+    max_videos_per_run: 30
+
+  bottom-up:
+    stock_weight: 1.2
+    max_videos_per_run: 30

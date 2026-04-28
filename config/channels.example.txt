@@ -1,0 +1,15 @@
+# channels.example.txt — init_project.py --channels= 입력 형식 예시.
+#
+# 한 줄에 한 채널 (whitespace 구분):
+#   channel_id              subdir         lens          name
+#
+# lens 값: macro / top-down / sector / bottom-up
+# 주석은 # 으로 시작.
+#
+# 본인 채널 리스트로 교체 후 다음 명령 실행:
+#   python3 scripts/init_project.py --channels=config/channels.example.txt --vault=/path/to/vault --region=KR
+
+UCadSWH0pDXxEatvLHEHCWlg  han_gyunsoo   top-down   한균수의 주식사용설명서
+UCR6Z2_Zg3M9lpot90vpZGdw  86bunga       macro      86번가
+UCtmKBFeri9hx9DOaVSSvvvw  seo_jaehyung  top-down   서재형의 투자교실
+UCowHl0BGalL433P6bCBgeKA  supergaemi    bottom-up  슈퍼개미 이세무사

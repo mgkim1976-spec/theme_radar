@@ -1,0 +1,2358 @@
+{
+  "version": "1.6",
+  "description": "KR 개별 주식 이벤트 어휘 사전. Company_Criteria + Event_Criteria + Sector_Criteria 기반. KR research 추출 시 corporate_event 대신 이 sub_type을 사용하고, object_category를 entity_id로 설정. v1.5: (기존) conference_abstract_release + fda_rejection/clinical_trial_failure base_rate + DART 3종(CB/유증/합병) 추가. v1.2: GS 5개 Trading Events 리서치 반영 (Earnings Direction 20yr/Analyst Day/Retail+Short Squeeze/Earnings Liquidity Wave). earnings_announcement에 유동성파 데이터, earnings_beat/miss에 GS 4변수 예측 모델, investor_day에 5,000+ 이벤트 GS 연구 base_rate 추가. v1.6: investor_day base_rate 정밀 업데이트 (GS 2013/2018 실측치 반영 — earnings_distance n수/정확한 수익률, 유럽연구 32bps/T-1피크/3.7x 프리미엄/kurtosis). analyst_day + capital_markets_day 신규 등록.",
+  "meta": {
+    "severity_levels": [
+      "CRITICAL",
+      "HIGH",
+      "MEDIUM",
+      "LOW"
+    ],
+    "direction_values": [
+      "positive",
+      "negative",
+      "binary",
+      "neutral"
+    ],
+    "predicate_map_note": "predicate 필드는 ontology_refiner가 CAUSAL 패턴 생성 시 사용할 권장 predicate"
+  },
+  "events": {
+    "earnings_beat": {
+      "korean_name": "어닝 서프라이즈",
+      "description": "영업이익이 시장 컨센서스를 30%+ 상회하거나 흑자 전환",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 5,
+        "max": 15
+      },
+      "subject_category": "earnings_beat",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "어닝 서프라이즈",
+        "컨센서스 상회",
+        "영업이익 증가",
+        "깜짝 실적",
+        "예상 상회"
+      ],
+      "pead_signal": true,
+      "base_rate": {
+        "60d_drift": "+3.5~6.0%",
+        "persistence_pct": 68,
+        "condition": "Top 25% 서프라이즈 분위 (Ball & Brown 1968, Bernard & Thomas 1989)",
+        "top10_drift": "+5.0~9.0%, 지속확률 72%",
+        "strong_pead": "EPS 비트 + 매출 비트 + 가이던스 상향 동시 충족 시",
+        "weak_pead": "EPS 비트 + 매출 미스 or 가이던스 하향 → 역드리프트 가능",
+        "pre_drift_caution": "어닝 전 20일 +10% 선반영 시 PEAD 약화",
+        "prediction_model_gslm": "GS 4변수 예측 모델 (2018, 35K+ 이벤트, 20년): ①options_implied_move ②short_interest_dtc ③price_target_upside(binary) ④growth_IP_factor",
+        "prediction_accuracy": "포지셔닝 변수만: 53% / 실제 EPS 결과 포함: 57% / 극단 신호(5분위): 60%",
+        "post_2015_regime": "2015년 후 모멘텀 레짐 (이전: 평균회귀). 비트 주가는 상승 지속, 미스 주가는 하락 지속 경향 강화",
+        "implied_move_importance": "T-stat 기준 가장 강한 단일 예측변수. 옵션 내재 변동성이 EPS 방향 예측에 핵심",
+        "observed_n": 129,
+        "observed_t0_mean": "+0.5%",
+        "observed_t5_mean": "+0.5%",
+        "observed_t20_mean": "-0.4%",
+        "observed_t60_mean": "-0.8%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=129/132 (actor_ticker 확보 케이스)",
+        "sector_reactions": {
+          "tech_saas": "±8~15% 당일, PEAD 높음 (ARR/NRR/가이던스 민감)",
+          "semiconductor": "±5~12%, PEAD 높음 (Book-to-Bill, 재고 사이클 연동)",
+          "financials": "±3~6%, PEAD 중간 (NIM, 충당금 핵심)",
+          "energy": "±3~5%, PEAD 낮음 (유가 연동으로 기업 고유 PEAD 약화)",
+          "healthcare_bio": "±10~30%, PEAD 매우 높음 (파이프라인 이벤트와 결합)",
+          "staples": "±2~4%, PEAD 낮음 (서프라이즈 크기 작음)"
+        },
+        "iv_crush": {
+          "pre_earnings_iv": "평균 +30~50% vs 정상 IV (어닝 전 팽창)",
+          "post_earnings": "어닝 후 즉각 소멸 (IV Crush)",
+          "implied_vs_realized": "옵션 implied move가 실현 변동성보다 평균 10~15% 과대추정 → 옵션 매도 측 수익 원천"
+        },
+        "liquidity_window": {
+          "optimal_entry": "t-6 ~ t-1일: 유동성 +17~32% (진입 최적 창구)",
+          "event_day": "t=0: 변동성이 거래량 압도 → 실질 유동성 저하",
+          "optimal_exit": "t+4 ~ t+5일: 유동성 +23~28% (청산 최적 창구)"
+        }
+      },
+      "notes": "PEAD 효과 — 발표 후 60일 드리프트 가능. Company_Criteria HIGH"
+    },
+    "earnings_miss": {
+      "korean_name": "어닝 쇼크",
+      "description": "영업이익이 컨센서스를 30%+ 하회하거나 적자 전환",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -8,
+        "max": -20
+      },
+      "subject_category": "earnings_miss",
+      "predicate": "drive_underperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "어닝 쇼크",
+        "컨센서스 하회",
+        "영업손실",
+        "적자 전환",
+        "실적 부진",
+        "예상 하회"
+      ],
+      "pead_signal": true,
+      "base_rate": {
+        "60d_drift": "-3.0~5.5%",
+        "persistence_pct": 65,
+        "condition": "Bottom 25% 서프라이즈 분위",
+        "bottom10_drift": "-5.0~8.0%, 지속확률 70%",
+        "prediction_model_gslm": "GS 4변수 예측 모델 동일 적용: high short_interest_dtc → 어닝 주간 하방 리스크 증가 (숏 커버링 기대 역설적으로 미스 시 가속 매도)",
+        "post_2015_regime": "2015년 후 하방 모멘텀 강화. 미스 후 평균회귀 약화 — 미스 이후 추가 하락 경향",
+        "retail_short_combo": "retail_volume 낮고 short_interest 높을 때 어닝 미스 → 하방 비대칭 심화 (GS 2021 Retail/Short Squeeze Study)",
+        "observed_n": 61,
+        "observed_t0_mean": "-1.6%",
+        "observed_t5_mean": "-0.9%",
+        "observed_t20_mean": "-2.2%",
+        "observed_t60_mean": "+0.9%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=61/63 (actor_ticker 확보 케이스)",
+        "sector_reactions": {
+          "tech_saas": "±8~15%, 가이던스 하향 동반 시 -15~25%",
+          "healthcare_bio": "-10~30%, 파이프라인 무관한 EPS 미스 → 평균회귀 가능",
+          "energy": "±2~4%, 유가 요인 제거 후 판단"
+        },
+        "momentum_regime_post2015": "2015년 후 모멘텀 레짐 — 미스 후 평균회귀 역매매 전략 위험 증가. 하락 지속 경향.",
+        "mean_reversion_exception": "바이오/헬스케어 제외 안정 섹터: 펀더멘털 훼손 없는 일시적 비용 증가 → 3~5일 내 50% 되돌림 가능"
+      },
+      "notes": "Company_Criteria HIGH"
+    },
+    "earnings_guidance_raise": {
+      "korean_name": "실적 가이던스 상향",
+      "description": "경영진의 연간 또는 분기 가이던스 공식 상향 조정",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 3,
+        "max": 10
+      },
+      "subject_category": "earnings_guidance_raise",
+      "predicate": "accelerate",
+      "object_type": "entity",
+      "keywords_ko": [
+        "가이던스 상향",
+        "전망 상향",
+        "목표 매출 상향",
+        "연간 가이던스 조정 상향"
+      ],
+      "notes": "guidance_raise + earnings_beat 복합 시 PEAD 확률 68~72%",
+      "base_rate": {
+        "observed_n": 23,
+        "observed_t0_mean": "+2.3%",
+        "observed_t5_mean": "-0.1%",
+        "observed_t20_mean": "+6.9%",
+        "observed_t60_mean": "+9.7%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=23/23 (actor_ticker 확보 케이스)"
+      }
+    },
+    "earnings_guidance_cut": {
+      "korean_name": "실적 가이던스 하향",
+      "description": "경영진의 연간 또는 분기 가이던스 공식 하향 조정",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -5,
+        "max": -15
+      },
+      "subject_category": "earnings_guidance_cut",
+      "predicate": "decelerate",
+      "object_type": "entity",
+      "keywords_ko": [
+        "가이던스 하향",
+        "전망 하향",
+        "실적 전망 하향 조정",
+        "목표 매출 하향"
+      ],
+      "notes": "earnings_miss와 함께 발생 시 복합 하락 신호",
+      "base_rate": {
+        "observed_n": 12,
+        "observed_t0_mean": "-0.7%",
+        "observed_t5_mean": "-1.7%",
+        "observed_t20_mean": "-3.2%",
+        "observed_t60_mean": "+4.3%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=12/13 (actor_ticker 확보 케이스)"
+      }
+    },
+    "turnaround_to_profit": {
+      "korean_name": "흑자 전환",
+      "description": "적자에서 흑자로 전환된 첫 분기 실적",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 10,
+        "max": 30
+      },
+      "subject_category": "turnaround_to_profit",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "흑자 전환",
+        "영업이익 흑자",
+        "적자 탈출",
+        "수익성 회복"
+      ],
+      "notes": "소형주에서 impact_pct 더 클 수 있음",
+      "base_rate": {
+        "observed_n": 27,
+        "observed_t0_mean": "+1.4%",
+        "observed_t5_mean": "+0.4%",
+        "observed_t20_mean": "+4.0%",
+        "observed_t60_mean": "-5.6%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=27/28 (actor_ticker 확보 케이스)"
+      }
+    },
+    "turnaround_to_loss": {
+      "korean_name": "적자 전환",
+      "description": "흑자에서 적자로 전환된 첫 분기 실적",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -10,
+        "max": -30
+      },
+      "subject_category": "turnaround_to_loss",
+      "predicate": "drive_underperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "적자 전환",
+        "영업손실 전환",
+        "당기순손실",
+        "흑자→적자"
+      ],
+      "notes": "Company_Criteria HIGH",
+      "base_rate": {}
+    },
+    "buyback_announcement": {
+      "korean_name": "자사주 매입 공시",
+      "description": "이사회 결의를 통한 자사주 매입 계획 공식 공시",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 3,
+        "max": 8
+      },
+      "subject_category": "buyback_announcement",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "자사주 매입",
+        "자사주 취득",
+        "자기주식 취득",
+        "주주환원"
+      ],
+      "notes": "Company_Criteria HIGH. 소각 공시 시 추가 +2~3%",
+      "base_rate": {
+        "observed_n": 17,
+        "observed_t0_mean": "+1.6%",
+        "observed_t5_mean": "-1.9%",
+        "observed_t20_mean": "+5.4%",
+        "observed_t60_mean": "+11.9%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=17/18 (actor_ticker 확보 케이스)"
+      }
+    },
+    "buyback_cancellation": {
+      "korean_name": "자사주 소각",
+      "description": "기 취득 자사주의 공식 소각 — 유통주식 수 영구 감소",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 3,
+        "max": 10
+      },
+      "subject_category": "buyback_cancellation",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "자사주 소각",
+        "자기주식 소각",
+        "주식 수 감소"
+      ],
+      "notes": "소각이 취득보다 강한 긍정 시그널",
+      "base_rate": {
+        "observed_n": 15,
+        "observed_t0_mean": "+0.8%",
+        "observed_t5_mean": "-1.6%",
+        "observed_t20_mean": "+3.4%",
+        "observed_t60_mean": "+17.1%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=15/17 (actor_ticker 확보 케이스)"
+      }
+    },
+    "special_dividend": {
+      "korean_name": "특별 배당",
+      "description": "정기 배당 외 이례적 특별 배당 공시",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 5,
+        "max": 15
+      },
+      "subject_category": "special_dividend",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "특별 배당",
+        "이례적 배당",
+        "중간 배당 확대",
+        "배당 정책 변경"
+      ],
+      "notes": "Company_Criteria HIGH",
+      "base_rate": {}
+    },
+    "rights_offering_dilutive": {
+      "korean_name": "희석성 유상증자 (3자 배정)",
+      "description": "시총 10%+ 규모의 3자 배정 유상증자 또는 CB/BW 발행",
+      "severity": "HIGH",
+      "direction": "binary",
+      "impact_pct": {
+        "typical": -8,
+        "max": -25,
+        "p95_upside": 33
+      },
+      "subject_category": "rights_offering_dilutive",
+      "predicate": "drive_underperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "3자 배정 유상증자",
+        "제3자 배정",
+        "CB 발행",
+        "BW 발행",
+        "전환사채 발행",
+        "지분 희석"
+      ],
+      "notes": "Event_Criteria HIGH. 풋옵션 행사 시 추가 악재",
+      "base_rate": {
+        "observed_n": 7,
+        "observed_t0_mean": "+1.5%",
+        "observed_t5_mean": "+2.6%",
+        "observed_t20_mean": "+9.5%",
+        "observed_t60_mean": "-7.5%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=7/7 (actor_ticker 확보 케이스)",
+        "backtest_note": "백테스트: 즉시 t0 하락(-), 단 P95=33% 상방 폭발력. 희석 목적(3자배정)이면 성장투자→중기 반등 가능. direction=binary"
+      }
+    },
+    "spinoff_announcement": {
+      "korean_name": "물적분할 확정",
+      "description": "알짜 자회사 물적분할 이사회 결의 확정 공시",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -8,
+        "max": -20
+      },
+      "subject_category": "spinoff_announcement",
+      "predicate": "drive_underperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "물적분할",
+        "자회사 분리 상장",
+        "분할 이사회 결의",
+        "물적 분할 확정"
+      ],
+      "notes": "Event_Criteria HIGH. 통상적 주가 하방 리스크"
+    },
+    "tender_offer": {
+      "korean_name": "공개 매수 (Tender Offer)",
+      "description": "인수 목적의 공개 매수 공시 — 피인수 기업에 대한 프리미엄 제안",
+      "severity": "CRITICAL",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 20,
+        "max": 50
+      },
+      "subject_category": "tender_offer",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "공개 매수",
+        "텐더 오퍼",
+        "매수 가격",
+        "공개매수 공시",
+        "피인수"
+      ],
+      "base_rate": {
+        "cash_deal_day1": "+25~35% (현금 딜 당일)",
+        "stock_deal_day1": "+15~25% (주식 교환 딜 당일)",
+        "deal_close_pct": 95,
+        "avg_premium_strategic": "+35~45% (전략적 M&A)",
+        "avg_premium_hostile": "+40~60% (적대적 인수, 경쟁 입찰 포함)",
+        "arb_spread_cash_small": "1~3% (소형 현금 딜, 95% 완료)",
+        "arb_spread_cash_large": "3~8% (대형·규제 이슈 딜, 85~90% 완료)",
+        "deal_break_target_decline": "-20~35% (딜 파기 시)",
+        "stock_deal_spread": "2~5% (주식 교환 딜, 완료율 90%+, 소요 4~8개월)",
+        "hostile_spread": "5~15% (적대적 인수, 완료율 60~75%, 소요 6~24개월)",
+        "crossborder_spread": "4~10% (크로스보더 딜, 완료율 80~85%, 소요 9~24개월)",
+        "break_fee": "딜 규모의 3~4% (타깃→인수자 보호). 리버스 브레이크업 3~5%",
+        "regulatory_sectors": "테크/통신/금융 섹터: FTC/DOJ 심층 심사 → 파기 리스크 높음",
+        "mae_risk": "MAE(Material Adverse Effect) 조항: 타깃 실적 급격 악화 시 인수자 파기 가능"
+      },
+      "notes": "Event_Criteria CRITICAL. 현재가와 공개매수가 스프레드 = 차익거래 기회"
+    },
+    "acquisition_target": {
+      "korean_name": "M&A 피인수 공시",
+      "description": "기업이 M&A의 타겟으로 확정 공시되는 경우",
+      "severity": "CRITICAL",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 20,
+        "max": 60
+      },
+      "subject_category": "acquisition_target",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "인수 대상",
+        "피인수 확정",
+        "M&A 타겟",
+        "매각 공시",
+        "인수 합의"
+      ],
+      "base_rate": {
+        "acquirer_day1": "-2~5% (인수자 주가 평균, Winner's Curse)",
+        "acquirer_positive_condition": "소규모 인수(타깃<인수자 20%) + 현금 충분 + 낮은 프리미엄",
+        "deal_close_on_completion": "+25% (타깃 기업, 완결 기준)",
+        "sector_contagion": "+3~8% (M&A 공시 후 2~5일, 섹터 내 잠재 타깃 동반 상승)",
+        "competing_bid_probability": "평균 5~10% (적대적 인수 후 20~30%, PE 바이아웃 타깃 15~20%)",
+        "pe_lbo_premium": "+25~35% 현금 딜, 완료율 92%+"
+      },
+      "notes": "Company_Criteria CRITICAL"
+    },
+    "acquisition_acquirer": {
+      "korean_name": "M&A 인수 발표 (매수자)",
+      "description": "기업이 다른 기업을 인수한다는 공식 발표 — 인수자 관점",
+      "severity": "HIGH",
+      "direction": "binary",
+      "impact_pct": {
+        "typical": -5,
+        "max": 10
+      },
+      "subject_category": "acquisition_acquirer",
+      "predicate": "accelerate",
+      "object_type": "entity",
+      "keywords_ko": [
+        "인수 발표",
+        "인수 합의",
+        "기업 인수",
+        "M&A 발표",
+        "피인수 기업 확보"
+      ],
+      "notes": "인수자는 단기 하락(주가 희석 우려) / 중장기 방향 불확실",
+      "base_rate": {
+        "observed_n": 24,
+        "observed_t0_mean": "+1.7%",
+        "observed_t5_mean": "+1.4%",
+        "observed_t20_mean": "+0.8%",
+        "observed_t60_mean": "-4.5%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=24/24 (actor_ticker 확보 케이스)"
+      }
+    },
+    "activist_campaign": {
+      "korean_name": "행동주의 펀드 개입",
+      "description": "대형 행동주의 펀드의 공격적 주주 서한·의결권 행사 시작",
+      "severity": "CRITICAL",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 10,
+        "max": 30
+      },
+      "subject_category": "activist_campaign",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "행동주의 펀드",
+        "주주 서한",
+        "얼라인파트너스",
+        "KCGI",
+        "지분 공시",
+        "5% 룰",
+        "경영 개입"
+      ],
+      "notes": "Event_Criteria CRITICAL. 배당/자사주/분사 요구 동반 시 더욱 강한 신호"
+    },
+    "court_ruling_ma": {
+      "korean_name": "M&A/합병 법원 판결",
+      "description": "M&A 또는 유상증자의 운명을 결정 짓는 법원 가처분/판결",
+      "severity": "CRITICAL",
+      "direction": "binary",
+      "impact_pct": {
+        "typical": 15,
+        "max": 40
+      },
+      "subject_category": "court_ruling_ma",
+      "predicate": "accelerate",
+      "object_type": "entity",
+      "keywords_ko": [
+        "법원 판결",
+        "가처분 인용",
+        "가처분 기각",
+        "법원 결정",
+        "M&A 법원"
+      ],
+      "notes": "Event_Criteria CRITICAL. 방향은 판결 결과에 따라 binary"
+    },
+    "merger_ratio_announced": {
+      "korean_name": "합병 비율 확정",
+      "description": "지주사 합병 또는 계열사 합병 시 비율 확정 공시",
+      "severity": "HIGH",
+      "direction": "binary",
+      "impact_pct": {
+        "typical": 10,
+        "max": 25
+      },
+      "subject_category": "merger_ratio_announced",
+      "predicate": "accelerate",
+      "object_type": "entity",
+      "keywords_ko": [
+        "합병 비율",
+        "합병 비율 확정",
+        "주식 교환 비율",
+        "합병 공시"
+      ],
+      "notes": "Event_Criteria HIGH. 비율이 주주에 유리/불리한지 즉각 판별 가능",
+      "base_rate": {
+        "observed_n": 5,
+        "observed_t0_mean": "+3.2%",
+        "observed_t5_mean": "-3.0%",
+        "observed_t20_mean": "-0.5%",
+        "observed_t60_mean": "+0.2%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=5/6 (actor_ticker 확보 케이스)"
+      }
+    },
+    "deal_termination": {
+      "korean_name": "M&A 거래 파기",
+      "description": "기 발표된 M&A 또는 인수 거래의 공식 파기/철회",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -10,
+        "max": -30
+      },
+      "subject_category": "deal_termination",
+      "predicate": "drive_underperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "거래 파기",
+        "인수 철회",
+        "M&A 취소",
+        "계약 해제",
+        "합의 철회"
+      ],
+      "base_rate": {
+        "target_decline_announcement": "-20~35% (피인수 기업, 공시 당일)",
+        "cash_deal_close_rate": "95% (현금 딜 최종 완결)",
+        "regulatory_deal_close_rate": "85~90% (대형/규제 리스크 딜)",
+        "break_fee_impact": "위약금 수령 시 -5~15%로 충격 완화 가능",
+        "acquirer_rebound": "+2~5% (인수 무산 시 인수자 주가 반등)"
+      },
+      "notes": "피인수 기업이 공개매수 프리미엄을 반납 → 급락"
+    },
+    "major_contract_win": {
+      "korean_name": "대형 수주 계약",
+      "description": "연간 매출액 대비 10%+ 수준의 신규 본계약 체결",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 5,
+        "max": 20
+      },
+      "subject_category": "major_contract_win",
+      "predicate": "accelerate",
+      "object_type": "entity",
+      "keywords_ko": [
+        "대형 수주",
+        "수주 계약 체결",
+        "본계약 체결",
+        "공급 계약",
+        "납품 계약",
+        "수주 공시"
+      ],
+      "notes": "Company_Criteria HIGH. MOU와 구분 필수 (MOU는 MEDIUM)",
+      "base_rate": {
+        "observed_n": 164,
+        "observed_t0_mean": "+0.7%",
+        "observed_t5_mean": "+0.4%",
+        "observed_t20_mean": "+0.9%",
+        "observed_t60_mean": "+4.4%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=164/166 (actor_ticker 확보 케이스)",
+        "backtest_sample_n": "1000+",
+        "backtest_note": "백테스트 #3: 가장 빈번(1000+건), 확실한 실적 모멘텀. f_high_ratio(계약규모/매출) 클수록 임팩트 강함"
+      }
+    },
+    "contract_loss": {
+      "korean_name": "주요 계약 상실 / 탈락",
+      "description": "핵심 고객사 벤더 탈락 또는 중요 계약 미갱신",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -8,
+        "max": -25
+      },
+      "subject_category": "contract_loss",
+      "predicate": "drive_underperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "벤더 탈락",
+        "공급사 제외",
+        "계약 미갱신",
+        "납품 중단",
+        "퀄리티 실패"
+      ],
+      "notes": "Company_Criteria CRITICAL급. 핵심 고객사 영구 탈락 시 CRITICAL",
+      "base_rate": {
+        "observed_n": 6,
+        "observed_t0_mean": "-2.5%",
+        "observed_t5_mean": "-0.2%",
+        "observed_t20_mean": "+0.6%",
+        "observed_t60_mean": "+23.0%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=6/6 (actor_ticker 확보 케이스)"
+      }
+    },
+    "capex_expansion": {
+      "korean_name": "대규모 설비투자 발표",
+      "description": "다년간 확정된 대규모 Capex 계획 — 섹터 밸류체인 낙수효과",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 5,
+        "max": 15
+      },
+      "subject_category": "capex_expansion",
+      "predicate": "accelerate",
+      "object_type": "entity",
+      "keywords_ko": [
+        "설비 투자",
+        "Capex 확대",
+        "생산 능력 증설",
+        "공장 증설",
+        "투자 계획 발표"
+      ],
+      "notes": "Sector_Criteria HIGH. 삼성/SK 같은 1등 기업 발표 시 후방 벤더까지 섹터 리레이팅",
+      "base_rate": {
+        "observed_n": 57,
+        "observed_t0_mean": "+0.3%",
+        "observed_t5_mean": "+1.6%",
+        "observed_t20_mean": "+1.4%",
+        "observed_t60_mean": "-9.6%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=57/58 (actor_ticker 확보 케이스)",
+        "backtest_win_rate_30d": "30%+",
+        "backtest_p95_30d": "28%",
+        "backtest_note": "백테스트 #1: win_rate 30%+ / P95=28% — 가장 균형잡힌 성장 신호"
+      }
+    },
+    "clinical_trial_success": {
+      "korean_name": "임상 시험 성공",
+      "description": "2상 또는 3상 임상시험의 긍정적 결과 공식 발표",
+      "severity": "CRITICAL",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 30,
+        "max": 100
+      },
+      "subject_category": "clinical_trial_success",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "sector": [
+        "biotech",
+        "pharma"
+      ],
+      "keywords_ko": [
+        "임상 성공",
+        "2상 성공",
+        "3상 성공",
+        "임상시험 긍정적 결과",
+        "유효성 입증"
+      ],
+      "notes": "Company_Criteria CRITICAL. 3상 성공이 2상보다 강함",
+      "base_rate": {
+        "observed_n": 10,
+        "observed_t0_mean": "+3.7%",
+        "observed_t5_mean": "+3.7%",
+        "observed_t20_mean": "+8.2%",
+        "observed_t60_mean": "+5.1%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=10/11 (actor_ticker 확보 케이스)"
+      }
+    },
+    "clinical_trial_failure": {
+      "korean_name": "임상 시험 실패",
+      "description": "2상 또는 3상 임상시험의 부정적 결과 또는 중단",
+      "severity": "CRITICAL",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -30,
+        "max": -80
+      },
+      "subject_category": "clinical_trial_failure",
+      "predicate": "drive_underperformance",
+      "object_type": "entity",
+      "sector": [
+        "biotech",
+        "pharma"
+      ],
+      "keywords_ko": [
+        "임상 실패",
+        "임상 중단",
+        "유효성 미달",
+        "3상 실패",
+        "2상 실패",
+        "임상 탈락"
+      ],
+      "notes": "Company_Criteria CRITICAL",
+      "base_rate": {
+        "note": "Phase 3 실패: 당일 -30~-60% (소형 바이오). Phase 2 실패: -15~-40%. KR CMO/기술수출 관련주 연쇄 하락 -5~-20%.",
+        "by_phase": {
+          "phase3_fail": "CAR t0 평균 -45% (소형) / -15% (대형). 피벗 가능성 여부가 2차 반등 결정.",
+          "phase2_fail": "CAR t0 평균 -30%. 후속 파이프라인 강도에 따라 복원 속도 상이.",
+          "phase1_fail": "-10~-25%. 초기 단계 → 피벗 여력 있음."
+        },
+        "kr_contagion": "국내 바이오 동종 파이프라인 보유사 -5~-15% 연쇄 하락 관찰됨"
+      }
+    },
+    "fda_approval": {
+      "korean_name": "FDA 승인",
+      "description": "미국 FDA 신약 또는 의료기기 승인 획득",
+      "severity": "CRITICAL",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 30,
+        "max": 100
+      },
+      "subject_category": "fda_approval",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "sector": [
+        "biotech",
+        "pharma",
+        "medtech"
+      ],
+      "keywords_ko": [
+        "FDA 승인",
+        "FDA 허가",
+        "미국 승인",
+        "NDA 승인",
+        "BLA 승인"
+      ],
+      "notes": "Sector_Criteria HIGH — K-바이오 전반 프리미엄 확산 효과",
+      "base_rate": {
+        "observed_n": 5,
+        "observed_t0_mean": "+0.6%",
+        "observed_t5_mean": "-2.9%",
+        "observed_t20_mean": "-10.9%",
+        "observed_t60_mean": "-26.3%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=5/7 (actor_ticker 확보 케이스)"
+      }
+    },
+    "fda_rejection": {
+      "korean_name": "FDA 거절 / CRL",
+      "description": "FDA 신약 허가 거절 또는 Complete Response Letter 수령",
+      "severity": "CRITICAL",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -30,
+        "max": -60
+      },
+      "subject_category": "fda_rejection",
+      "predicate": "drive_underperformance",
+      "object_type": "entity",
+      "sector": [
+        "biotech",
+        "pharma"
+      ],
+      "keywords_ko": [
+        "FDA 거절",
+        "CRL",
+        "허가 거절",
+        "FDA 반려",
+        "Complete Response Letter"
+      ],
+      "notes": "",
+      "base_rate": {
+        "note": "FDA CRL(Complete Response Letter) 수령: 당일 -30~-70% (소형 바이오). 대형 제약사 -5~-20%. 재심사(resubmission) 가능성 발표 시 일부 반등.",
+        "observed_pattern": "CAR t0 평균 -35~-45% (업계 데이터). KR 관련주(CMO/기술 이전) 동조 하락 평균 -10~-20%.",
+        "resubmission_probability": "CRL 수령 후 6개월 내 재심사 승인율 약 50~60%"
+      }
+    },
+    "technology_export": {
+      "korean_name": "기술 수출 / 라이선스 아웃",
+      "description": "글로벌 빅파마/대기업 대상 기술 수출 계약 체결",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 10,
+        "max": 50
+      },
+      "subject_category": "technology_export",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "sector": [
+        "biotech",
+        "pharma",
+        "tech"
+      ],
+      "keywords_ko": [
+        "기술 수출",
+        "라이선스 아웃",
+        "License Out",
+        "기술 이전 계약",
+        "글로벌 계약"
+      ],
+      "notes": "계약금+마일스톤 구조. 계약금/총 규모 수치 중요",
+      "base_rate": {
+        "observed_n": 4,
+        "observed_t0_mean": "+3.2%",
+        "observed_t5_mean": "-2.4%",
+        "observed_t20_mean": "+5.2%",
+        "observed_t60_mean": "+6.7%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=4/7 (actor_ticker 확보 케이스)"
+      }
+    },
+    "index_inclusion": {
+      "korean_name": "주요 지수 편입",
+      "description": "KOSPI200/MSCI Korea/S&P500 등 주요 지수 편입 확정",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 3,
+        "max": 10
+      },
+      "subject_category": "index_inclusion",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "지수 편입",
+        "KOSPI200 편입",
+        "MSCI 편입",
+        "코스피200 신규 편입",
+        "지수 신규 편입"
+      ],
+      "base_rate": {
+        "sp500_pre_inclusion": "공시 후 편입 전일까지 +5~8% (패시브 선매수)",
+        "sp500_inclusion_day": "편입 당일 +0.5~2% (매수 완료 후 변동성 축소)",
+        "sp500_post_30d": "-2~4% (편입 후 30일, 공급 소화)",
+        "msci_korea_pre": "공시 후 편입 전까지 +6~12% (MSCI 편입 효과 더 큼 — 외인 매수)",
+        "kospi200_typical": "+2~5% (KOSPI200 편입, 상대적으로 소규모 패시브 효과)",
+        "russell2000_pre": "+8~12% (Russell 2000 편입 예상 4~6월, 추측성 매수)",
+        "russell2000_rebalancing_day": "편입 당일: 최대 거래량, 종가 기준 패시브 일괄 매수",
+        "russell2000_post": "-3~6% (편입 후 되돌림)",
+        "russell1000_promotion": "Russell 2000→1000 승격: 더 큰 패시브 AUM → 수급 효과 강함",
+        "sp500_post_reversal_mechanism": "편입 공시~편입일(T-5~T-1): 차익거래자 선행 매수 → 수급 정상화 후 -2~4% 되돌림",
+        "observed_n": 3,
+        "observed_t0_mean": "-0.9%",
+        "observed_t5_mean": "-4.8%",
+        "observed_t20_mean": "-18.2%",
+        "observed_t60_mean": "-37.2%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=3/4 (actor_ticker 확보 케이스)"
+      },
+      "notes": "패시브 펀드 의무 매수 → 단기 수급 이벤트"
+    },
+    "index_exclusion": {
+      "korean_name": "주요 지수 제외",
+      "description": "KOSPI200/MSCI Korea 등 주요 지수에서 제외 확정",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -3,
+        "max": -10
+      },
+      "subject_category": "index_exclusion",
+      "predicate": "drive_underperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "지수 제외",
+        "KOSPI200 제외",
+        "MSCI 제외",
+        "코스피200 편출"
+      ],
+      "base_rate": {
+        "announcement_decline": "-8~15% (제외 공시 당일)",
+        "pre_exclusion_drift": "-3~7% (공시~제외일까지 추가 하락, 패시브 매도 압력)",
+        "msci_exclusion": "-10~20% (MSCI Korea 제외 — 외인 청산 동반)",
+        "russell2000_exclusion": "-5~10% (Russell 2000 편출)",
+        "msci_korea_exclusion": "-8~20% (MSCI Korea 편출, 신흥국 소형주는 더 크게)",
+        "short_acceleration": "편출 공시 후 헤지펀드 선행 공매도 → 하락 속도 편입 상승보다 빠름"
+      },
+      "notes": "패시브 펀드 의무 매도 → 단기 수급 이벤트"
+    },
+    "executive_misconduct": {
+      "korean_name": "경영진 횡령/배임",
+      "description": "대규모 경영진 횡령·배임 혐의 또는 회계 부정 공시",
+      "severity": "CRITICAL",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -20,
+        "max": -60
+      },
+      "subject_category": "executive_misconduct",
+      "predicate": "disrupt",
+      "object_type": "entity",
+      "keywords_ko": [
+        "횡령",
+        "배임",
+        "회계 부정",
+        "검찰 수사",
+        "특별검사",
+        "경영진 구속"
+      ],
+      "notes": "Company_Criteria CRITICAL. 상장폐지 트리거로 이어질 수 있음"
+    },
+    "audit_opinion_qualified": {
+      "korean_name": "감사 의견 거절 / 한정",
+      "description": "외부 회계감사에서 의견 거절 또는 한정 의견 수령",
+      "severity": "CRITICAL",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -30,
+        "max": -80
+      },
+      "subject_category": "audit_opinion_qualified",
+      "predicate": "disrupt",
+      "object_type": "entity",
+      "keywords_ko": [
+        "감사 의견 거절",
+        "한정 의견",
+        "의견 거절",
+        "감사인 의견",
+        "상장폐지 실질 심사"
+      ],
+      "notes": "Company_Criteria CRITICAL. 상장폐지 사유 직결"
+    },
+    "delisting_risk": {
+      "korean_name": "상장폐지 위험",
+      "description": "거래소의 상장폐지 실질심사 개시 또는 관리종목 지정",
+      "severity": "CRITICAL",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -30,
+        "max": -90
+      },
+      "subject_category": "delisting_risk",
+      "predicate": "disrupt",
+      "object_type": "entity",
+      "keywords_ko": [
+        "상장폐지",
+        "관리종목",
+        "실질심사",
+        "거래 정지",
+        "상폐 위험"
+      ],
+      "notes": "Company_Criteria CRITICAL"
+    },
+    "governance_reform": {
+      "korean_name": "지배구조 개선",
+      "description": "이사회 독립성 강화, 주주환원 정책 공식 발표, 지배구조 개편",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 5,
+        "max": 20
+      },
+      "subject_category": "governance_reform",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "지배구조 개선",
+        "이사회 독립",
+        "주주환원 정책",
+        "거버넌스 개선",
+        "밸류업"
+      ],
+      "notes": "Sector_Criteria HIGH — 저PBR 금융주/지주사에 특히 강한 영향",
+      "base_rate": {}
+    },
+    "sector_regulation_lifted": {
+      "korean_name": "업종 규제 철폐 / 완화",
+      "description": "핵심 사업에 대한 법적 규제 철폐 또는 합법화 공식 확정",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 10,
+        "max": 30
+      },
+      "subject_category": "sector_regulation_lifted",
+      "predicate": "accelerate",
+      "object_type": "entity",
+      "keywords_ko": [
+        "규제 철폐",
+        "규제 완화",
+        "합법화",
+        "허가 기준 완화",
+        "규제 샌드박스"
+      ],
+      "notes": "Sector_Criteria HIGH. 구두 약속이 아닌 법안 통과/행정 명령 필수"
+    },
+    "sector_regulation_imposed": {
+      "korean_name": "업종 신규 규제 부과",
+      "description": "핵심 사업에 부과되는 신규 법적 규제 또는 세금 확정",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -5,
+        "max": -20
+      },
+      "subject_category": "sector_regulation_imposed",
+      "predicate": "disrupt",
+      "object_type": "entity",
+      "keywords_ko": [
+        "규제 부과",
+        "신규 규제",
+        "법안 통과",
+        "세금 강화",
+        "영업 제한"
+      ],
+      "notes": "",
+      "base_rate": {}
+    },
+    "subsidy_announced": {
+      "korean_name": "보조금 / 정책 지원 확정",
+      "description": "정부 예산이 확정된 보조금·세제 혜택·정책 자금 지원",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 5,
+        "max": 20
+      },
+      "subject_category": "subsidy_announced",
+      "predicate": "accelerate",
+      "object_type": "entity",
+      "keywords_ko": [
+        "보조금 확정",
+        "정부 지원 확정",
+        "예산 배정",
+        "세제 혜택 신설",
+        "R&D 지원"
+      ],
+      "notes": "구두 립서비스(MEDIUM)와 구분 필수 — 예산법/행정명령 수반 시에만 HIGH",
+      "base_rate": {}
+    },
+    "subsidy_cut": {
+      "korean_name": "보조금 철회 / 지원 축소",
+      "description": "기존 보조금·지원금의 공식 철회 또는 대폭 축소",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -10,
+        "max": -30
+      },
+      "subject_category": "subsidy_cut",
+      "predicate": "disrupt",
+      "object_type": "entity",
+      "keywords_ko": [
+        "보조금 철회",
+        "지원 중단",
+        "보조금 삭감",
+        "전기차 보조금 폐지",
+        "IRA 혜택 축소"
+      ],
+      "notes": "Sector_Criteria CRITICAL 수준. 2차전지 등 보조금 의존 섹터에 치명적"
+    },
+    "new_product_launch": {
+      "korean_name": "신제품 출시",
+      "description": "신제품 공식 출시 발표 (확정 계약 미동반)",
+      "severity": "MEDIUM",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 2,
+        "max": 8
+      },
+      "subject_category": "new_product_launch",
+      "predicate": "accelerate",
+      "object_type": "entity",
+      "keywords_ko": [
+        "신제품 출시",
+        "신작 출시",
+        "신규 서비스 론칭",
+        "제품 발표"
+      ],
+      "notes": "Company_Criteria MEDIUM. 계약 수반 없으면 기대감에 그침",
+      "base_rate": {
+        "observed_n": 68,
+        "observed_t0_mean": "+0.6%",
+        "observed_t5_mean": "-0.2%",
+        "observed_t20_mean": "-1.4%",
+        "observed_t60_mean": "-0.5%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=68/69 (actor_ticker 확보 케이스)"
+      }
+    },
+    "game_launch": {
+      "korean_name": "게임 신작 출시",
+      "description": "게임 회사의 신규 타이틀 공식 출시 및 초기 성과",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 5,
+        "max": 30
+      },
+      "subject_category": "game_launch",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "sector": [
+        "gaming"
+      ],
+      "sector_kpi": "day1_revenue",
+      "keywords_ko": [
+        "신작 출시",
+        "게임 론칭",
+        "오픈 서비스",
+        "글로벌 출시",
+        "매출 1위"
+      ],
+      "notes": "출시 초기 결제액 수치(첫 주 결제액)가 핵심 KPI",
+      "base_rate": {
+        "observed_n": 15,
+        "observed_t0_mean": "+4.1%",
+        "observed_t5_mean": "-2.6%",
+        "observed_t20_mean": "-7.3%",
+        "observed_t60_mean": "-14.4%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=15/16 (actor_ticker 확보 케이스)"
+      }
+    },
+    "analyst_target_raise": {
+      "korean_name": "증권사 목표가 상향",
+      "description": "주요 증권사의 목표가 상향 조정 (펀더멘털 변화 없는 단독 리포트)",
+      "severity": "MEDIUM",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 1,
+        "max": 3
+      },
+      "subject_category": "analyst_target_raise",
+      "predicate": "support",
+      "object_type": "entity",
+      "keywords_ko": [
+        "목표가 상향",
+        "투자의견 매수",
+        "목표 주가 상향",
+        "TP 상향"
+      ],
+      "notes": "Company_Criteria MEDIUM. 단독 리포트는 단기 1~3% 수준",
+      "base_rate": {
+        "observed_n": 72,
+        "observed_t0_mean": "+0.6%",
+        "observed_t5_mean": "+0.4%",
+        "observed_t20_mean": "+2.4%",
+        "observed_t60_mean": "+4.4%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=72/73 (actor_ticker 확보 케이스)"
+      }
+    },
+    "analyst_target_cut": {
+      "korean_name": "증권사 목표가 하향",
+      "description": "주요 증권사의 목표가 하향 조정",
+      "severity": "MEDIUM",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -1,
+        "max": -5
+      },
+      "subject_category": "analyst_target_cut",
+      "predicate": "drive_underperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "목표가 하향",
+        "목표 주가 하향",
+        "TP 하향",
+        "투자의견 중립"
+      ],
+      "notes": "Company_Criteria MEDIUM",
+      "base_rate": {
+        "observed_n": 7,
+        "observed_t0_mean": "-3.2%",
+        "observed_t5_mean": "+1.4%",
+        "observed_t20_mean": "+7.0%",
+        "observed_t60_mean": "+6.1%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=7/7 (actor_ticker 확보 케이스)"
+      }
+    },
+    "mou_signing": {
+      "korean_name": "MOU 체결",
+      "description": "법적 구속력 없는 양해각서 체결",
+      "severity": "MEDIUM",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 1,
+        "max": 5
+      },
+      "subject_category": "mou_signing",
+      "predicate": "support",
+      "object_type": "entity",
+      "keywords_ko": [
+        "MOU 체결",
+        "양해각서",
+        "업무 협약",
+        "협력 협약"
+      ],
+      "notes": "Company_Criteria MEDIUM. 법적 구속력 없어 본계약 미동반 시 찌라시 수준",
+      "base_rate": {}
+    },
+    "management_change_ceo": {
+      "korean_name": "CEO 교체",
+      "description": "대표이사 교체 또는 주요 임원 변경 공시",
+      "severity": "MEDIUM",
+      "direction": "binary",
+      "impact_pct": {
+        "typical": 2,
+        "max": 10
+      },
+      "subject_category": "management_change_ceo",
+      "predicate": "accelerate",
+      "object_type": "entity",
+      "keywords_ko": [
+        "대표이사 교체",
+        "CEO 교체",
+        "대표 변경",
+        "경영진 교체"
+      ],
+      "notes": "구조조정 목적이면 positive / 내분이면 negative",
+      "base_rate": {
+        "observed_n": 6,
+        "observed_t0_mean": "-1.1%",
+        "observed_t5_mean": "+1.6%",
+        "observed_t20_mean": "+1.0%",
+        "observed_t60_mean": "+7.2%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=6/7 (actor_ticker 확보 케이스)"
+      }
+    },
+    "short_squeeze": {
+      "korean_name": "숏 스퀴즈",
+      "description": "높은 공매도 잔고 + 상승 모멘텀으로 공매도 포지션이 강제 청산되는 이벤트. 비어닝 기간에 retail 거래량 급증과 결합 시 비대칭 상방 압력 발생.",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 10,
+        "max": 50
+      },
+      "subject_category": "short_squeeze",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "공매도 청산",
+        "숏 스퀴즈",
+        "short squeeze",
+        "공매도 잔고 급감",
+        "대차잔고 감소",
+        "숏커버링 폭발"
+      ],
+      "base_rate": {
+        "non_earnings_setup": "short_interest 높음 + retail_volume 급증 → 비어닝 기간 상방 비대칭 (GS 2021, 5변수 모델)",
+        "earnings_reversal": "어닝 주간은 반대 — high short_interest가 미스 시 가속 매도로 전환 (하방 리스크 증가)",
+        "5_var_model": "예측 변수: ①shares_volume ②options_volume ③retail_shares_pct ④retail_options_pct ⑤short_interest_pct — 5개 모두 비어닝 상방 비대칭에 통계적 유의",
+        "retail_options_signal": "retail_options_pct 급등 = 콜 매수 급증 → 딜러 델타 헤지 → 추가 상방 압력 (감마 스퀴즈 동반 가능)",
+        "duration": "평균 3~7일 (강제 청산 완료 시까지)"
+      },
+      "causal_chain": "공매도 잔고 과다 누적 + 호재(어닝 비트/루머/섹터 랠리) 발생 → 초기 상승 → 공매도 손실 → 마진콜/손절 강제 → 추가 매수 압력 → 나선형 상승",
+      "notes": "meme stock(게임스탑 등) 이벤트의 전형. 어닝 주간과 비어닝 주간 방향이 반대 → 어닝 여부 구분이 핵심"
+    },
+    "activist_13d_filing": {
+      "korean_name": "행동주의 13D 공시 / 5% 지분 공시",
+      "description": "Elliott·KCGI 등 대형 행동주의 펀드의 5%+ 지분 공시 (13D/13G). 공개 캠페인 개시 전 단계.",
+      "severity": "CRITICAL",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 10,
+        "max": 25
+      },
+      "subject_category": "activist_13d_filing",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "13D",
+        "5% 지분 공시",
+        "대량보유 공시",
+        "5% 초과 보유",
+        "지분 취득 공시"
+      ],
+      "base_rate": {
+        "day1_surge": "+10~25% (공시 당일, 행동주의 프리미엄)",
+        "large_activist_day1": "+15~25% (Elliott·Starboard 등 대형 행동주의)",
+        "small_activist_day1": "+5~10% (소형 행동주의)",
+        "campaign_success_12m": "+20~40% (캠페인 성공 — 자사주 소각·분할·매각 실현 시)",
+        "campaign_failure_12m": "-5~15% (캠페인 실패 — 경영진 승리 시)",
+        "korea_specific": "+10~20% (한국: 코리아 디스카운트 해소 기대감으로 프리미엄 추가)",
+        "demand_success_by_type": {
+          "board_seats": "~75% (이사회 구성 변경)",
+          "ceo_change": "~40% (CEO 교체)",
+          "strategic_review_ma": "~55% (전략적 검토/M&A 매각)",
+          "capital_allocation": "~80% (자사주/배당 개선)",
+          "spinoff_demand": "~60% (분사 요구)"
+        },
+        "brav_2008_1yr_excess": "+7% 평균 1년 초과수익 (동업종 대비, Brav et al. 2008)",
+        "ma_inducement_return": "+15~20% (M&A 유도 요구 시 최고 성과)",
+        "13g_to_13d_signal": "+3~8% (13G→13D 전환 = 적극화 시그널)"
+      },
+      "causal_chain": "지분 취득 공시 → M&A/턴어라운드 기대감 형성 → 단기 주가 급등 (역사적 13D 후 +10~15%).",
+      "notes": "Event_Criteria CRITICAL. 대형 행동주의 펀드만 해당 — 소액 주주 단순 공시와 구분 필수"
+    },
+    "activist_proxy_fight": {
+      "korean_name": "위임장 대결 (Proxy Fight)",
+      "description": "행동주의 펀드와 기존 경영진 간의 이사회 의석을 놓고 벌이는 주주총회 표 대결",
+      "severity": "HIGH",
+      "direction": "binary",
+      "impact_pct": {
+        "typical": 5,
+        "max": 20
+      },
+      "subject_category": "activist_proxy_fight",
+      "predicate": "accelerate",
+      "object_type": "entity",
+      "keywords_ko": [
+        "위임장 대결",
+        "프록시 파이트",
+        "이사 선임 경쟁",
+        "주주총회 표 대결",
+        "이사 후보 추천"
+      ],
+      "causal_chain": "위임장 대결 개시 → 기관 투자자 동조 여부 관건 → 행동주의 승리 시 구조조정 가속 / 패배 시 단기 실망 매도.",
+      "notes": "결과가 binary. 절차 장기화 → 자본 묶임 리스크 존재 (Activist B 문서 리스크 항목)",
+      "base_rate": {}
+    },
+    "activist_board_seat_won": {
+      "korean_name": "행동주의 이사회 의석 확보",
+      "description": "행동주의 펀드가 합의 또는 주주총회 표결을 통해 이사회 의석 확보에 성공",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 5,
+        "max": 15
+      },
+      "subject_category": "activist_board_seat_won",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "이사회 진입",
+        "이사 선임 합의",
+        "독립 이사 진입",
+        "이사회 의석 확보"
+      ],
+      "causal_chain": "이사회 의석 → 비핵심 자산 매각 위원회 가동 + 자본배분 개선 직접 통제 → 구조조정 실행 가속.",
+      "notes": "Activist A 문서 3단계: '행동주의 이사진 선임 → 비핵심 자산 매각 및 비용 절감 위원회 가동'"
+    },
+    "sotp_spinoff_confirmed": {
+      "korean_name": "SOTP 분할 / 핵심 자회사 스핀오프 확정",
+      "description": "복합할인 해소 목적의 사업부 인적분할(Tax-free Spin-off) 확정 공시. 행동주의 압박 결과 또는 자발적 구조조정.",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 10,
+        "max": 30
+      },
+      "subject_category": "sotp_spinoff_confirmed",
+      "predicate": "expand",
+      "object_type": "entity",
+      "keywords_ko": [
+        "인적분할",
+        "스핀오프",
+        "사업부 분리 상장",
+        "자회사 독립 법인",
+        "Pure-play 분리"
+      ],
+      "causal_chain": "이질적 사업부 혼재 → 복합할인 발생 → 인적분할 → 각 사업부 독립 멀티플 부여 → SOTP 가치 현실화.",
+      "framework": "Conglomerate Discount 해소. spinoff_announcement(물적분할)와 구분: 인적분할은 모주주에 자사주 배분 → 모회사 주가 긍정적.",
+      "notes": "Activist A/B/C 문서 핵심 패턴. 물적분할(spinoff_announcement)은 부정적, 인적분할은 긍정적",
+      "base_rate": {
+        "observed_n": 12,
+        "observed_t0_mean": "-0.8%",
+        "observed_t5_mean": "+1.7%",
+        "observed_t20_mean": "+0.8%",
+        "observed_t60_mean": "-9.9%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=12/14 (actor_ticker 확보 케이스)"
+      }
+    },
+    "leveraged_recapitalization": {
+      "korean_name": "레버리지 리캡 / 최적 자본구조 전환",
+      "description": "과잉현금·저부채 기업이 부채를 늘려 대규모 자사주 매입+특별배당을 실행하는 자본구조 재편",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 10,
+        "max": 25
+      },
+      "subject_category": "leveraged_recapitalization",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "최적 자본구조",
+        "부채 활용 주주환원",
+        "레버리지 업",
+        "자본구조 재편",
+        "Lazy Balance Sheet 해소"
+      ],
+      "causal_chain": "잉여현금 과다 보유(Lazy Balance Sheet) → 행동주의 압박 → 적정 부채(ND/EBITDA 2~3x) 조달 → 자사주 대량 매입 → EPS 상승 + WACC 하락 → 멀티플 리레이팅.",
+      "risk": "채권자-주주 대리인 갈등 → 신용등급 강등 리스크 (Activist C 문서 5절 참조)",
+      "notes": "Trian 케이스(GE, DuPont 등)의 핵심 처방. 부채의 감세 효과(Tax Shield) 활용"
+    },
+    "reit_conversion": {
+      "korean_name": "REIT / MLP 구조 전환",
+      "description": "부동산·인프라 자산 보유 기업의 REIT 또는 MLP 구조 전환으로 세제 효율화 + 자산 가치 현실화",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 15,
+        "max": 40
+      },
+      "subject_category": "reit_conversion",
+      "predicate": "expand",
+      "object_type": "entity",
+      "keywords_ko": [
+        "REIT 전환",
+        "리츠 전환",
+        "MLP 전환",
+        "부동산 신탁",
+        "자산 유동화 구조"
+      ],
+      "causal_chain": "장부가 낮은 부동산/인프라 자산 → REIT 전환 → 법인세 면세 + Cap Rate 프리미엄 → 배당수익률 급증 → 기관 투자자 수요 유입 → 멀티플 확장.",
+      "notes": "Activist A Iron Mountain 케이스 핵심 패턴. 한국에서는 모집형/공모형 리츠로 유사 적용"
+    },
+    "asset_monetization": {
+      "korean_name": "저평가 유형자산 유동화",
+      "description": "장부가보다 훨씬 높은 시장가치를 가진 부동산·설비·특허 등 숨겨진 자산을 JV·매각·리스백으로 현금화",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 10,
+        "max": 35
+      },
+      "subject_category": "asset_monetization",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "숨겨진 가치",
+        "부동산 JV",
+        "자산 매각",
+        "세일앤리스백",
+        "특허 매각",
+        "자산 유동화"
+      ],
+      "causal_chain": "시장이 인식 못한 자산가치 → 유동화 이벤트(JV/매각) → 현금 유입 + 부채 상환 → 순자산가치(NAV) 리레이팅.",
+      "notes": "Starboard Macy's 케이스: 부동산 JV 2개 분리. Elliott Iron Mountain: REIT 전환과 결합",
+      "base_rate": {}
+    },
+    "korea_discount_resolution": {
+      "korean_name": "코리아 디스카운트 해소 이벤트",
+      "description": "재벌 순환출자 해소, 지주사 전환, 자사주 소각 등 구조적 코리아 디스카운트 해소 조치 확정",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 15,
+        "max": 40
+      },
+      "subject_category": "korea_discount_resolution",
+      "predicate": "expand",
+      "object_type": "entity",
+      "keywords_ko": [
+        "코리아 디스카운트",
+        "순환출자 해소",
+        "지주사 전환",
+        "자사주 전량 소각",
+        "밸류업 프로그램",
+        "지배구조 디스카운트"
+      ],
+      "causal_chain": "복잡한 순환출자 → 불투명 지배구조 → 글로벌 투자자 밸류에이션 할인 → 지주사 전환+자사주 소각+투명성 제고 → MSCI/글로벌 동종 피어 대비 할인 축소.",
+      "notes": "Elliott Samsung 케이스(2016). 한국 재벌 특화. 얼라인파트너스 요구 패턴과 동일 구조",
+      "base_rate": {}
+    },
+    "chaebol_restructuring": {
+      "korean_name": "재벌 지배구조 구조조정",
+      "description": "재벌 그룹의 인적분할, 지주회사-사업회사 분리, 계열사 합병 비율 확정 등 지배구조 재편 이벤트",
+      "severity": "HIGH",
+      "direction": "binary",
+      "impact_pct": {
+        "typical": 10,
+        "max": 30
+      },
+      "subject_category": "chaebol_restructuring",
+      "predicate": "accelerate",
+      "object_type": "entity",
+      "keywords_ko": [
+        "지주사 전환",
+        "지주회사 설립",
+        "Holdco 분리",
+        "계열사 합병",
+        "그룹 구조조정",
+        "재벌 개혁"
+      ],
+      "causal_chain": "합병 비율·분할 방식에 따라 특정 계열사는 수혜(지배력 확보) / 일부는 손해 → 합병 비율 공시 후 binary 반응.",
+      "notes": "삼성 C&T / 제일모직 합병 등 Korea 특화. 합병 비율이 주주에게 유리한지 즉각 판별 가능",
+      "base_rate": {}
+    },
+    "margin_improvement_program": {
+      "korean_name": "공식 마진 개선 프로그램 발표",
+      "description": "경쟁사 대비 마진 갭을 명시하고 구체적 비용절감 타겟(EBITDA Margin %)을 공식 발표",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 5,
+        "max": 20
+      },
+      "subject_category": "margin_improvement_program",
+      "predicate": "accelerate",
+      "object_type": "entity",
+      "keywords_ko": [
+        "마진 개선 계획",
+        "비용 절감 계획",
+        "EBITDA 마진 목표",
+        "구조조정 계획 발표",
+        "인력 감축 계획"
+      ],
+      "causal_chain": "경쟁사 대비 마진 갭 공론화 → 구체적 수치 목표 + 타임라인 발표 → 영업 레버리지 회복 기대감 → 멀티플 선반영.",
+      "notes": "Trian Procter&Gamble, Starboard Office Depot 패턴. Zero-based Budgeting과 결합 시 강한 신호",
+      "base_rate": {
+        "observed_n": 3,
+        "observed_t0_mean": "-0.9%",
+        "observed_t5_mean": "+5.0%",
+        "observed_t20_mean": "+2.8%",
+        "observed_t60_mean": "-6.6%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=3/3 (actor_ticker 확보 케이스)"
+      }
+    },
+    "divestiture_noncore": {
+      "korean_name": "비핵심 자산 매각",
+      "description": "핵심 사업과 무관한 사업부·지분·부동산의 공식 매각 또는 매각 계획 발표",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 5,
+        "max": 20
+      },
+      "subject_category": "divestiture_noncore",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "비핵심 자산 매각",
+        "사업부 매각",
+        "계열사 지분 매각",
+        "자산 매각",
+        "포트폴리오 슬림화"
+      ],
+      "causal_chain": "비핵심 자산 매각 → 복합할인 해소 + 매각 대금 주주환원 → 순수(Pure-play) 기업으로 재평가.",
+      "notes": "Activist B/C 반복 패턴. 경쟁 외부 자산 매각 후 핵심 사업 집중",
+      "base_rate": {
+        "observed_n": 14,
+        "observed_t0_mean": "+1.6%",
+        "observed_t5_mean": "-0.7%",
+        "observed_t20_mean": "-0.4%",
+        "observed_t60_mean": "+0.2%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=14/16 (actor_ticker 확보 케이스)"
+      }
+    },
+    "shareholder_return_program": {
+      "korean_name": "대규모 주주환원 프로그램 공식화",
+      "description": "FCF의 일정 비율(예: 75%+) 또는 절대 금액 기반의 다년간 자사주·배당 환원 프로그램 공식 발표",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 5,
+        "max": 15
+      },
+      "subject_category": "shareholder_return_program",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "주주환원 프로그램",
+        "FCF 75% 환원",
+        "다년간 자사주",
+        "자본환원 계획",
+        "TSR 제고 계획"
+      ],
+      "causal_chain": "잉여현금흐름 → 공식 주주환원 약속 → 경영진 현금 낭비 원천 차단 + EPS 상승 기대 → 멀티플 리레이팅.",
+      "notes": "Elliott Samsung 요구: FCF 75% 환원. Juniper·Cognizant 케이스와 동일 패턴",
+      "base_rate": {
+        "observed_n": 15,
+        "observed_t0_mean": "+1.8%",
+        "observed_t5_mean": "+0.8%",
+        "observed_t20_mean": "-0.5%",
+        "observed_t60_mean": "+1.7%",
+        "observed_updated": "2026-04-19",
+        "observed_note": "시장조정 CAR (벤치마크: SPY/^KS11). n=15/15 (actor_ticker 확보 케이스)"
+      }
+    },
+    "ipo_listing": {
+      "korean_name": "IPO / 신규 상장",
+      "description": "기업공개(IPO) 공모 및 증권거래소 신규 상장. 수요예측 → 공모가 확정 → 상장 3단계 이벤트.",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 10,
+        "max": 50
+      },
+      "subject_category": "ipo_listing",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "IPO",
+        "기업공개",
+        "신규 상장",
+        "공모",
+        "수요예측",
+        "상장 예정",
+        "코스닥 상장",
+        "코스피 상장",
+        "공모가 확정"
+      ],
+      "base_rate": {
+        "first_day_return": "+10~20% (평균 첫날 수익률, IPO 저평가 현상)",
+        "lockup_expiry_drop": "-3~8% (보호예수 만료 후 공급 압력)",
+        "1y_underperformance": "-5~15% (장기 IPO 저성과 현상, Ritter 1991)",
+        "hot_ipo_premium": "수요예측 경쟁률 1,000:1+ 시 첫날 +30~50%",
+        "cold_ipo": "공모가 밴드 하단 확정 시 첫날 수익률 제한"
+      },
+      "notes": "수요예측(rights_offering_dilutive와 구분)과 상장일을 별도 트리거로 관리. 상장 후 락업 만료(lockup_expiry)까지 이벤트 체인"
+    },
+    "earnings_announcement": {
+      "korean_name": "실적 발표 예정일",
+      "description": "경영진이 공식 예고한 분기/연간 실적 발표 예정 날짜. 향후 일정으로만 사용 (발표된 결과는 earnings_beat/miss 사용).",
+      "severity": "HIGH",
+      "direction": "binary",
+      "impact_pct": {
+        "typical": 3,
+        "max": 10
+      },
+      "subject_category": "earnings_announcement",
+      "predicate": "signal_of",
+      "object_type": "entity",
+      "keywords_ko": [
+        "실적 발표 예정",
+        "어닝 발표일",
+        "분기 실적 예고",
+        "잠정실적 예정",
+        "실적 컨퍼런스콜 예정",
+        "earnings date",
+        "1분기 실적 발표"
+      ],
+      "base_rate": {
+        "pre_announcement_drift": "+1~2% (발표 전 1개월 불확실성 프리미엄 — DB Handbook Part I: 91,750건)",
+        "volatility_spike": "발표 당일 변동성 2~3배 급등 (options implied vol 상승 선반영)",
+        "positive_pad": "발표일 확정 공시 자체도 양의 PAD 존재 (Figure 157: Exp Earnings Release Date)",
+        "liquidity_wave_pre": "t-6~t-1일: 분기평균 대비 +30% 유동성 — 펀더멘털 투자자의 최적 포지션 진입 창구 (GS 2019, R3000, 12yr)",
+        "liquidity_wave_day0": "t=0 어닝 당일: 거래량 증가하나 변동성이 압도 → 실질 유동성 평균 이하. 포지션 진입/청산 불리",
+        "liquidity_wave_exit": "t+4~t+5일: 유동성 분기평균 대비 +20~30% 반등 → 펀더멘털 투자자의 최적 청산 시점",
+        "positioning_strategy": "사전 뷰 보유 시: t-6~t-1 진입(+30% 유동성) → 어닝 이후 t+4~t+5 청산. 반응형 투자 시: t+1 직후 유동성 낮아 슬리피지 주의"
+      },
+      "notes": "캘린더 파이프라인 전용 이벤트 타입 — 미래 일정 모니터링용. 발표 결과가 확인되면 earnings_beat/miss로 전환"
+    },
+    "investor_day": {
+      "korean_name": "Investor Day / 애널리스트 데이",
+      "description": "경영진이 기관투자자·애널리스트를 대상으로 중장기 전략·가이던스를 발표하는 공식 행사. Analyst Day / Capital Markets Day 포함.",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 3,
+        "max": 15
+      },
+      "subject_category": "investor_day",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "Investor Day",
+        "애널리스트 데이",
+        "Capital Markets Day",
+        "기업설명회",
+        "NDR",
+        "중장기 전략 발표",
+        "가이던스 발표 행사"
+      ],
+      "base_rate": {
+        "pad_1m": "+0.8~1.2% (1개월 PAD — DB Handbook Figure 157: 양의 PAD 2위권)",
+        "guidance_raise_combo": "중장기 가이던스 상향 동반 시 +5~10% 추가",
+        "upside_prediction": "이벤트 예측 모델에서 유의미한 양의 알파 (DB Figure 159)",
+        "gs_analyst_day_5000": "+0.8% 평균 주가 수익률 (GS 2013, 3,700 이벤트 2002~2012, T-5~T+1; 9/11년 양의 성과)",
+        "stock_up_probability": "57% (무작위 대비 +7%p). 섹터 초과: +0.5%",
+        "call_buying_alpha": "이벤트 전 콜옵션 매수 전략: 13/14년 수익 (평균 +22% 연환산)",
+        "timing_vs_earnings": ">21 거래일 후: +1.0% / 10~21일: +0.6% / 5~10일: +0.1% / 동시: +0.3%",
+        "best_sector_combo": "Growth IP 80~100%ile + 저FCF(0~20%ile) 기업이 최대 알파",
+        "post_2015_note": "2015 이후 행사 빈도 증가 — 일부 선반영 심화로 당일 효과 희석 가능",
+        "timing_vs_earnings_detail": {
+          "coincident": {
+            "stock_ret": "+0.3%",
+            "n": 211
+          },
+          "5_to_10d": {
+            "stock_ret": "+0.1%",
+            "n": 260
+          },
+          "10_to_21d": {
+            "stock_ret": "+0.6%",
+            "n": 590
+          },
+          "over_21d": {
+            "stock_ret": "+1.0%",
+            "n": 1224
+          }
+        },
+        "outperformance_window": "T-14 ~ T+2 (피크: T-5 ~ T+1). IV는 이벤트 전 소폭 하락 — 옵션 시장이 촉매로 미인식",
+        "eu_study_32bps": "+32bps 시장 상대 수익률 (GS 2018, STOXX600 3,000+ 이벤트, 10년). T-1이 리스크조정 알파 피크",
+        "eu_lesser_known": "직접 발굴 이벤트: +0.50% vs Bloomberg 등재 이벤트: +0.26% (3.7배 격차)",
+        "eu_kurtosis": "Kurtosis=6.7 (정규분포 3.0 대비 2.2배) — 분산 포지셔닝 필요",
+        "eu_june_best": "유럽: 6월 +75bps (전체 평균 +32bps의 2.3배)",
+        "us_seasonality": "미국: 12월·4월 최고 수익 월 (가장 빈도 높은 월: 5월·11월과 불일치)",
+        "top_sectors_us": "InfoTech(n=619) > Industrials(n=332) > Healthcare(n=375) > Materials(n=107)",
+        "eu_top_sector": "Retail +110bps(적중률 66%) — 경영진 가이던스 영향력 최대",
+        "healthcare_note": "Healthcare: Analyst Day > 어닝 발표 (파이프라인/임상 데이터가 분기 EPS보다 중요)"
+      },
+      "notes": "주요 상장사의 정기 IR 행사. 가이던스 상향·전략 전환 발표 시 earnings_guidance_raise와 복합 이벤트로 처리"
+    },
+    "product_launch_major": {
+      "korean_name": "빅테크/글로벌 플래그십 제품 발표",
+      "description": "Apple(WWDC/iPhone 행사), Tesla(신모델 인도 이벤트), NVDA(GTC), 삼성(언팩) 등 시장 전체에 파급효과가 있는 플래그십 제품 발표·출시 이벤트.",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 3,
+        "max": 15
+      },
+      "subject_category": "product_launch_major",
+      "predicate": "accelerate",
+      "object_type": "entity",
+      "keywords_ko": [
+        "제품 발표 행사",
+        "언팩",
+        "GTC",
+        "WWDC",
+        "Tesla 인도 이벤트",
+        "출시 컨퍼런스",
+        "신제품 공개",
+        "모델 공개 행사",
+        "CES",
+        "MWC"
+      ],
+      "base_rate": {
+        "supply_chain_pre_run": "발표 전 1~3개월: 공급망 관련주 +5~15% 선반영 (소문 매수)",
+        "announcement_day": "0~+3% (기대 선반영으로 발표 당일 효과 제한, 'sell the news' 위험)",
+        "supply_chain_impact": "공급사·부품사에 직접 수주 확대 기대 → sector 리레이팅",
+        "product_failure_risk": "기대 이하 스펙/판매 부진 시 -5~10% 역효과"
+      },
+      "causal_chain": "플래그십 제품 발표 → 공급망 수주 확대 기대 → 관련 부품사·소재사 선반영 → 실제 출하량 확인 시 본격 CAUSAL 패턴 형성.",
+      "notes": "DB Handbook Part I: Product Announcements 102,386건. new_product_launch(MEDIUM)와 구분: 글로벌 파급효과가 있는 플래그십 이벤트만 해당"
+    },
+    "lockup_expiry": {
+      "korean_name": "보호예수 만료 / 락업 해제",
+      "description": "IPO 또는 유상증자 이후 의무 보유기간(보호예수) 종료 — 창업주·벤처캐피탈·기관 투자자의 대량 매도 가능 시점.",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -5,
+        "max": -20
+      },
+      "subject_category": "lockup_expiry",
+      "predicate": "drive_underperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "보호예수 만료",
+        "락업 해제",
+        "의무보유 해제",
+        "보호예수 종료",
+        "lock-up expiry",
+        "주요주주 매도가능일"
+      ],
+      "base_rate": {
+        "announcement_day": "-1~3% (만료 당일 평균 하락)",
+        "pre_expiry": "-2~5% (만료 전 1~2주 선반영 매도)",
+        "large_holder_lockup": "VC·창업자 보유 지분 30%+ 시 -5~15% 추가 압력",
+        "db_handbook": "End of Lock-Up Period: 발표 당일 및 이후 부정적 수익률 (DB Figure 61, 63)"
+      },
+      "notes": "IPO 후 90~180일, 유상증자 후 1~3개월 보호예수가 일반적. 만료일 캘린더 모니터링 필수"
+    },
+    "dividend_initiation": {
+      "korean_name": "배당 개시 (신규 배당 선언)",
+      "description": "배당을 지급한 적 없던 기업이 처음으로 정기 배당을 공식 선언",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 3,
+        "max": 10
+      },
+      "subject_category": "dividend_initiation",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "배당 개시",
+        "첫 배당",
+        "신규 배당 선언",
+        "배당 정책 도입",
+        "배당 발표"
+      ],
+      "base_rate": {
+        "announcement_day": "+1~2% (DB Handbook Figure 155: 유의미한 양의 발표일 효과)",
+        "pad_1m": "+0.5~1.5% (1개월 PAD — 배당 성장 기대)",
+        "high_roe_premium": "+3% 추가 PAD (ROE 상위 25% 기업 — Figure 8)",
+        "earnings_growth_impact": "배당 개시 후 EPS 성장 둔화 경향 (배당>재투자 트레이드오프 — Figure 166)"
+      },
+      "notes": "배당 신호 이론(Miller 1980): 배당 개시는 경영진의 미래 수익성 자신감 신호. 한국: 밸류업 프로그램과 연계 시 강한 신호"
+    },
+    "dividend_cut": {
+      "korean_name": "배당 삭감 / 배당 중단",
+      "description": "기존 정기 배당의 대폭 삭감(50%+) 또는 완전 중단 공시",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -5,
+        "max": -15
+      },
+      "subject_category": "dividend_cut",
+      "predicate": "drive_underperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "배당 삭감",
+        "배당 중단",
+        "배당 취소",
+        "배당금 감소",
+        "무배당 전환",
+        "배당 철회"
+      ],
+      "base_rate": {
+        "pre_announcement": "-5~7% (공시 전 1개월 사전 하락 — Figure 154 최상위)",
+        "announcement_day": "-3~6% (공시 당일 — Figure 156)",
+        "pad_1m": "-2~4% (1개월 PAD)",
+        "high_leverage_combo": "부채비율 높은 기업의 배당 삭감 → -20~25% (재무 위기 신호 — Figure 9)",
+        "unexpected_cut": "배당 여력 있는 기업의 예상 밖 삭감 → 더 큰 주가 충격 (역설적 — Figure 9)"
+      },
+      "notes": "배당 삭감 + 고부채 = 재무 위기 복합 신호. 배당 삭감과 취소(cancellation)를 통합 처리"
+    },
+    "ma_rumor": {
+      "korean_name": "M&A 루머 / 인수 검토설",
+      "description": "확정되지 않은 M&A 관련 언론 보도나 시장 루머 — 인수 협상 진행 중이라는 초기 신호",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 5,
+        "max": 20
+      },
+      "subject_category": "ma_rumor",
+      "predicate": "support",
+      "object_type": "entity",
+      "keywords_ko": [
+        "인수 검토설",
+        "M&A 루머",
+        "인수 협상 중",
+        "매각설",
+        "합병 검토",
+        "인수 대상 거론",
+        "딜 루머"
+      ],
+      "base_rate": {
+        "pre_announcement_run": "+2~4% (루머 발생 후 1개월 누적 — Figure 153: M&A 관련 양의 선반영 최상위)",
+        "deal_confirmation_premium": "루머 후 실제 발표 시 추가 +15~25% (공개매수 프리미엄)",
+        "deal_denial_reversal": "루머 부인 시 -3~5% 되돌림"
+      },
+      "notes": "루머와 확정 공시(acquisition_target/tender_offer)를 구분. 루머 단계는 불확실성 있으므로 확정 공시 전까지 별도 추적"
+    },
+    "ma_closing": {
+      "korean_name": "M&A 거래 종결 (Deal Closing)",
+      "description": "기 발표된 M&A 또는 인수합병 거래의 최종 완결 공식 확인",
+      "severity": "HIGH",
+      "direction": "binary",
+      "impact_pct": {
+        "typical": -2,
+        "max": 5
+      },
+      "subject_category": "ma_closing",
+      "predicate": "accelerate",
+      "object_type": "entity",
+      "keywords_ko": [
+        "M&A 완결",
+        "인수 완료",
+        "합병 완료",
+        "거래 종결",
+        "딜 클로징",
+        "합병 기일"
+      ],
+      "base_rate": {
+        "target_pad_1m": "-1.5~2.5% (피인수 기업 — 공개매수 프리미엄 소진 후 역전, Figure 158)",
+        "acquirer_pad_1m": "-0.5~1.5% (인수자 — 인수 완료 후 통합 비용 인식)",
+        "seller_pad_1m": "+0.5~1.5% (매각 기업 — 비핵심 자산 정리 수혜)",
+        "db_handbook": "M&A closing Target: 발표 이후 음의 PAD — 차익거래 포지션 청산 (Figure 97)"
+      },
+      "notes": "risk arb 전략의 청산 시점. 인수 완료 후 피인수 기업 상장폐지 또는 통합으로 사후 추적 불필요"
+    },
+    "impairment_writeoff": {
+      "korean_name": "자산 손상차손 / 영업권 상각",
+      "description": "대규모 자산 손상차손 인식 또는 영업권(Goodwill) 상각 공시",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -5,
+        "max": -20
+      },
+      "subject_category": "impairment_writeoff",
+      "predicate": "drive_underperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "손상차손",
+        "영업권 상각",
+        "자산 손상",
+        "Impairment",
+        "Write-off",
+        "대손충당금",
+        "유형자산 손상"
+      ],
+      "base_rate": {
+        "announcement_day": "-1~2% (DB Handbook Figure 122: Impairments/Write Offs)",
+        "pre_announcement": "-1~2% (선반영 하락)",
+        "pad_1m": "-0.5~1.5% (단기 음의 드리프트)",
+        "credit_risk_up": "손상차손 후 신용위험 상승 (Figure 126)"
+      },
+      "notes": "일회성 손상은 시장 충격 제한적이나, 반복적 손상은 사업 구조적 문제 신호. M&A 후 영업권 손상은 인수 실패 신호"
+    },
+    "follow_on_offering": {
+      "korean_name": "유상증자 (주주 배정 / 일반 공모)",
+      "description": "기존 주주 배정 또는 일반 공모 방식의 유상증자 — 희석 효과. rights_offering_dilutive(3자 배정)와 구분.",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -5,
+        "max": -15
+      },
+      "subject_category": "follow_on_offering",
+      "predicate": "drive_underperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "유상증자",
+        "주주 배정 증자",
+        "일반 공모 증자",
+        "공모 유상증자",
+        "Follow-on Offering",
+        "FO",
+        "신주 발행"
+      ],
+      "base_rate": {
+        "announcement_day": "-2~4% (DB Handbook Figure 61: Follow-on Equity Offerings Target, 유의미한 음의 반응)",
+        "post_offering_pad": "-1~3% (발행 후 1개월 PAD — 시장 희석 인식)",
+        "high_valuation_penalty": "PBR 고평가 기업의 유상증자 → 더 큰 하락 (Figure 66)",
+        "distress_signal": "반복 유상증자 → 현금 소진 신호 → 추가 하락 가능"
+      },
+      "notes": "rights_offering_dilutive(3자 배정, 시총 10%+, -10~25%)와 구분. 일반 주주 배정 증자는 희석폭 더 작음"
+    },
+    "delayed_earnings": {
+      "korean_name": "실적 발표 지연",
+      "description": "예정된 실적 발표일에 발표를 하지 못하고 공식 연기 — 회계 문제나 내부 감사 이슈 신호",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -5,
+        "max": -20
+      },
+      "subject_category": "delayed_earnings",
+      "predicate": "elevate_risk",
+      "object_type": "entity",
+      "keywords_ko": [
+        "실적 발표 지연",
+        "실적 발표 연기",
+        "잠정 실적 미발표",
+        "공시 지연",
+        "회계감사 지연"
+      ],
+      "base_rate": {
+        "announcement_day": "-2~3% (공시 지연 발표 당일 — DB Figure 122)",
+        "pre_announcement": "-2~4% (지연 예상 선반영)",
+        "pad_1m": "-3~5% (단기 지속 하락 — 가장 큰 음의 PAD 중 하나, Figure 158)",
+        "high_vol_penalty": "고변동성 기업의 지연 → 정보 비대칭 × 투자자 불안 = 더 큰 PAD (Figure 143)",
+        "vs_delayed_sec_filing": "SEC 공시 지연보다는 충격 작음 — SEC 지연은 법적 제재 리스크 추가"
+      },
+      "notes": "실적 발표 지연은 깊은 회계 문제의 선행 신호. delayed_earnings_announcement와 delayed_sec_filing은 별개 (DB: SEC 지연이 더 치명적)"
+    },
+    "guidance_raise": {
+      "korean_name": "가이던스 상향",
+      "description": "경영진이 다음 분기/연간 실적 전망치를 기존 가이던스보다 상향. 어닝 비트와 함께 발생 시 가장 강한 PEAD 트리거.",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 3,
+        "max": 10
+      },
+      "subject_category": "earnings_beat",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "가이던스 상향",
+        "전망치 상향",
+        "가이던스 올려",
+        "실적 전망 개선",
+        "EPS guidance raise",
+        "FY guidance up",
+        "아웃룩 상향"
+      ],
+      "pead_signal": true,
+      "base_rate": {
+        "combo_eps_beat": "EPS 비트 + 가이던스 상향 → 가장 강한 PEAD (+5~9%, 72%)",
+        "guidance_alone": "EPS 인라인 + 가이던스 상향 → 당일 +3~6% (향후 컨센서스 상향 기대)",
+        "analyst_revision_lag": "애널리스트 목표주가 상향 1~2주 후 반영 → 60일 드리프트 동반",
+        "momentum_regime": "2015년 후 모멘텀 레짐 — 가이던스 상향 지속성 높아짐"
+      },
+      "causal_chain": "가이던스 상향 → 애널리스트 추정치 상향 → 기관 비중 확대 → 60일 점진적 드리프트",
+      "notes": "EPS 비트 없이 가이던스만 상향해도 유의미한 반응. 어닝 발표일 외 투자자 데이 등에서도 발생."
+    },
+    "guidance_cut": {
+      "korean_name": "가이던스 하향",
+      "description": "경영진이 다음 분기/연간 실적 전망치를 기존 가이던스보다 하향. EPS 비트에도 불구하고 주가 하락 가능.",
+      "severity": "HIGH",
+      "direction": "negative",
+      "impact_pct": {
+        "typical": -4,
+        "max": -15
+      },
+      "subject_category": "earnings_miss",
+      "predicate": "drive_underperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "가이던스 하향",
+        "전망치 하향",
+        "아웃룩 하향",
+        "실적 전망 악화",
+        "EPS guidance cut",
+        "guidance withdraw",
+        "가이던스 철회"
+      ],
+      "pead_signal": true,
+      "base_rate": {
+        "eps_beat_guidance_cut": "EPS 비트 + 가이던스 하향 → 당일 상승 후 1~2주 내 역드리프트",
+        "guidance_cut_alone": "순수 가이던스 하향 → 당일 -4~8% (향후 컨센서스 대폭 하향)",
+        "guidance_withdrawn": "가이던스 철회(Withdrawn) → 불확실성 프리미엄 → 변동성 확대 → 과매도 후 기회",
+        "momentum_regime": "2015년 후 모멘텀 레짐 — 하향 이후 하락 지속 경향 강화"
+      },
+      "causal_chain": "가이던스 하향 → 애널리스트 추정치 하향 → 기관 비중 축소 → 지속적 하락 드리프트",
+      "notes": "EPS 비트여도 가이던스 하향이면 주가 하락. 특히 SaaS/기술주에서 NRR/ARR 가이던스가 핵심."
+    },
+    "buyback": {
+      "korean_name": "자사주 매입 공시",
+      "description": "기업의 자사주 매입 프로그램 공시 — EPS 증가, 경영진 저평가 신호, 주가 하방 지지.",
+      "severity": "MEDIUM",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 2,
+        "max": 8
+      },
+      "subject_category": "corporate_event",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "자사주 매입",
+        "자사주 취득",
+        "buyback",
+        "share repurchase",
+        "ASR",
+        "가속 자사주 매입",
+        "주식 소각"
+      ],
+      "base_rate": {
+        "announcement_day_large": "+1~3% (대형주)",
+        "announcement_day_small": "+3~6% (소형주)",
+        "asr_announcement": "+5~8% (ASR — 가속 자사주 매입, 즉각 주식 수 감소)",
+        "execution_rate_caution": "공시 금액 ≠ 실제 집행. 경기 악화 시 중단 가능",
+        "eps_accretion": "EPS 증가 (주식 수 감소) + 주가 하방 지지 (회사 직접 매수)"
+      },
+      "causal_chain": "자사주 매입 공시 → EPS 희석 감소 → 경영진 저평가 신호 → 기관 매수 확인 → 주가 지지",
+      "notes": "ASR(Accelerated Share Repurchase)이 일반 buyback보다 강한 즉각 반응. Index_Reconstitution_Activist_Patterns.md."
+    },
+    "spinoff": {
+      "korean_name": "사업부 분사 (Spin-off)",
+      "description": "모기업에서 사업부를 독립 상장 기업으로 분리. 모회사 주주가치 실현 + 독립 기업 리레이팅 기회.",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 4,
+        "max": 15
+      },
+      "subject_category": "corporate_event",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "분사",
+        "스핀오프",
+        "사업부 분리",
+        "인적분할",
+        "상장 분리",
+        "spinoff",
+        "spin-off",
+        "carve-out",
+        "사업 구조 재편"
+      ],
+      "base_rate": {
+        "parent_announcement": "+3~5% 평균 (모회사 공시 당일, 주주가치 실현)",
+        "initial_1_3m": "-구조적 매도 (인덱스 리밸런싱, 보유 불원 투자자)",
+        "relisting_12m": "+독립 경영 가시화 → 섹터 PE 기준 리레이팅 기회",
+        "korea_distinction": "인적분할=긍정(주주가치 보존) vs 물적분할=부정(자회사 상장 후 지분 매각)"
+      },
+      "causal_chain": "분사 공시 → 모회사 주주 → 독립 기업 주식 수취 → 초기 구조적 매도 → 3~12개월 후 독립 가치 리레이팅",
+      "notes": "한국: 물적분할(지배주주 이익) vs 인적분할(일반주주 동등 처우) 구분 중요. MA_Arbitrage_Patterns.md."
+    },
+    "medical_conference": {
+      "korean_name": "바이오/의학 학회",
+      "description": "AACR/ASCO/ESMO/ASH/ADA/ESC/AHA 등 주요 의학 학회 개최. 섹터 전반 재평가 트리거.",
+      "severity": "HIGH",
+      "direction": "binary",
+      "impact_pct": {
+        "typical": 3,
+        "max": 15
+      },
+      "subject_category": "corporate_event",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "학회",
+        "컨퍼런스",
+        "AACR",
+        "ASCO",
+        "ESMO",
+        "ASH",
+        "ADA",
+        "ESC",
+        "AHA",
+        "BIOKOREA",
+        "SABCS"
+      ],
+      "base_rate": {
+        "note": "Tier 1 학회(AACR/ASCO/ESMO/ASH): 발표 데이터 수준에 따라 바이오 섹터 전반 ±3~15% 가능. 일반적으로 학회 2주 전부터 기대감 선반영."
+      }
+    },
+    "conference_presentation": {
+      "korean_name": "학회 발표 (개별 기업)",
+      "description": "AACR/ASCO 등 주요 학회에서 특정 기업의 임상 데이터 발표. 구두/포스터/late-breaking 발표 유형에 따라 임팩트 차이.",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 8,
+        "max": 40
+      },
+      "subject_category": "corporate_event",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "구두발표",
+        "포스터발표",
+        "late-breaking",
+        "임상결과 발표",
+        "oral presentation",
+        "abstract"
+      ],
+      "base_rate": {
+        "late_breaking": "±15~40% 가능. 당일 갭업/갭다운 빈번.",
+        "oral": "±8~25%. 기대 대비 데이터 수준에 따라 방향 결정.",
+        "poster": "±3~10%. 사전 공개 abstract가 있으면 선반영 가능성 높음.",
+        "note": "발표 전 abstract 공개일(embargo 해제일)이 실질적 t0. 학회 당일보다 2~3일 전이 더 중요."
+      }
+    },
+    "conference_abstract_release": {
+      "severity": "CRITICAL",
+      "direction": "binary",
+      "description": "학회 초록 공개일 — 이 날이 실질적 t0. 임상 데이터 윤곽 최초 공개.",
+      "base_rate": {
+        "note": "AACR/ASCO/ESMO Tier1 학회: 초록 공개 당일 관련 기업 ±5~25% 가능. 학회 개막일까지 모멘텀 지속 확률 약 60%. 부정적 초록은 즉각 반응 후 반등 드물음.",
+        "tier1_avg": "±10~15% 당일 가능 (ASCO/AACR late-breaking 포함 종목)",
+        "embargo_note": "초록 공개가 t0 — 학회 개막일에 추가 반응은 제한적 (이미 선반영)"
+      },
+      "korean_name": "학회 초록공개"
+    },
+    "convertible_bond_issuance": {
+      "severity": "HIGH",
+      "direction": "negative",
+      "description": "CB(전환사채) 발행 결정 공시.",
+      "base_rate": {
+        "note": "CB 발행: 공시 당일 -3~-12% (희석 우려). 발행 규모가 시총 대비 5% 초과 시 더 큰 충격. 전환가액이 현재 주가에 대한 할인율 확인 필수.",
+        "f_short_term": "계약기간 1년 이내 CB → 단기 압박 신호. -5~-15% 추가 하락 가능.",
+        "dart_4features": "DART 파싱 f_high_ratio(매출 대비 비율), f_short_term(단기 여부), f_tech(기술계약 여부) 참조"
+      },
+      "korean_name": "전환사채 발행"
+    },
+    "rights_offering": {
+      "severity": "HIGH",
+      "direction": "negative",
+      "description": "유상증자 결정 공시.",
+      "base_rate": {
+        "note": "유상증자 공시 당일 -5~-20%. 희석률이 핵심 — 기존 주주 EPS 희석 정도에 따라 반응 차이. 주주배정은 일반공모 대비 충격 적음.",
+        "discount_rate": "발행가 할인율 10~20%가 일반적. 할인율이 클수록 기존 주주 손해.",
+        "use_of_proceeds": "사업 확장 자금 < 채무 상환 < 운전자금 순으로 주가 충격 증가"
+      },
+      "korean_name": "유상증자"
+    },
+    "merger_acquisition": {
+      "severity": "CRITICAL",
+      "direction": "binary",
+      "description": "합병·인수 결정 공시.",
+      "base_rate": {
+        "acquirer": "인수자: 당일 -2~-8% (인수 프리미엄 부담). 전략적 가치 인정 시 플랫.",
+        "target": "피인수: 당일 +15~35% (인수 프리미엄). 경쟁 입찰 가능성 있으면 추가 상승.",
+        "kr_note": "DART 합병 공시: 소규모 합병(GD < 10%)은 반응 미미. 대형 합병 → 지주사/계열사 연쇄 반응 확인 필요."
+      },
+      "korean_name": "인수합병"
+    },
+    "analyst_day": {
+      "korean_name": "Analyst Day (=Investor Day 별칭)",
+      "description": "investor_day와 동일 이벤트. 소스에 따라 다른 명칭으로 표기될 때 사용.",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 3,
+        "max": 15
+      },
+      "subject_category": "investor_day",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "Analyst Day",
+        "애널리스트 데이",
+        "기업설명회"
+      ],
+      "base_rate": {
+        "alias_of": "investor_day — base_rate 동일"
+      },
+      "notes": "investor_day와 동일 현상. _INVESTOR_DAY_ETYPES 공통 처리."
+    },
+    "capital_markets_day": {
+      "korean_name": "Capital Markets Day (=Investor Day 별칭)",
+      "description": "유럽 기업이 주로 사용하는 명칭. investor_day와 동일 이벤트.",
+      "severity": "HIGH",
+      "direction": "positive",
+      "impact_pct": {
+        "typical": 3,
+        "max": 15
+      },
+      "subject_category": "investor_day",
+      "predicate": "drive_outperformance",
+      "object_type": "entity",
+      "keywords_ko": [
+        "Capital Markets Day",
+        "CMD",
+        "전략설명회"
+      ],
+      "base_rate": {
+        "alias_of": "investor_day — base_rate 동일"
+      },
+      "notes": "유럽 기업 빈출 명칭. STOXX600 연구(GS 2018)와 직접 연관."
+    }
+  },
+  "subject_category_mapping": {
+    "note": "KR research 추출 시 subject_category 필드에 위의 event key를 직접 사용. 아래는 ontology_refiner가 분류하는 상위 카테고리와의 매핑",
+    "CRITICAL_events": [
+      "tender_offer",
+      "acquisition_target",
+      "activist_campaign",
+      "activist_13d_filing",
+      "court_ruling_ma",
+      "clinical_trial_success",
+      "clinical_trial_failure",
+      "fda_approval",
+      "fda_rejection",
+      "executive_misconduct",
+      "audit_opinion_qualified",
+      "delisting_risk",
+      "subsidy_cut"
+    ],
+    "HIGH_events": [
+      "earnings_beat",
+      "earnings_miss",
+      "short_squeeze",
+      "earnings_guidance_raise",
+      "earnings_guidance_cut",
+      "turnaround_to_profit",
+      "turnaround_to_loss",
+      "buyback_announcement",
+      "buyback_cancellation",
+      "special_dividend",
+      "rights_offering_dilutive",
+      "spinoff_announcement",
+      "acquisition_acquirer",
+      "merger_ratio_announced",
+      "deal_termination",
+      "major_contract_win",
+      "contract_loss",
+      "capex_expansion",
+      "technology_export",
+      "index_inclusion",
+      "index_exclusion",
+      "governance_reform",
+      "sector_regulation_lifted",
+      "sector_regulation_imposed",
+      "subsidy_announced",
+      "game_launch",
+      "activist_proxy_fight",
+      "activist_board_seat_won",
+      "sotp_spinoff_confirmed",
+      "leveraged_recapitalization",
+      "reit_conversion",
+      "asset_monetization",
+      "korea_discount_resolution",
+      "chaebol_restructuring",
+      "margin_improvement_program",
+      "divestiture_noncore",
+      "shareholder_return_program",
+      "ipo_listing",
+      "earnings_announcement",
+      "investor_day",
+      "product_launch_major",
+      "lockup_expiry",
+      "dividend_initiation",
+      "dividend_cut",
+      "ma_rumor",
+      "ma_closing",
+      "impairment_writeoff",
+      "follow_on_offering",
+      "delayed_earnings"
+    ],
+    "MEDIUM_events": [
+      "new_product_launch",
+      "analyst_target_raise",
+      "analyst_target_cut",
+      "mou_signing",
+      "management_change_ceo"
+    ],
+    "generic_excluded": [
+      "corporate_event",
+      "single_stock",
+      "single_stock_perf",
+      "macro_trend",
+      "macro_event",
+      "policy_action",
+      "theme"
+    ],
+    "note_on_generic": "generic_excluded 목록은 너무 범용적 — 어떤 주식에나 적용됨. KR research 추출 시 절대 사용 금지"
+  },
+  "extraction_rules": {
+    "object_category_rule": "KR 개별 주식 분석 시 object_category를 'earnings'/'revenue' 등 generic으로 설정하지 말고, 반드시 entity_id(예: kr_036570)로 설정할 것. 이렇게 해야 ontology_refiner가 entity-specific CAUSAL-ENT 파일을 생성함.",
+    "severity_filter": "MEDIUM 이하 이벤트는 기본적으로 CAUSAL 패턴 생성 불필요. HIGH 이상만 패턴화.",
+    "keyword_match": "아래 이벤트 키워드가 리서치 리포트에 등장하면 해당 event type으로 분류. 모호한 경우 severity를 한 단계 낮춤.",
+    "composite_signals": {
+      "pead_composite": "earnings_beat + earnings_guidance_raise 동시 발생 → PEAD 확률 68~72%",
+      "acquirer_penalty": "acquisition_acquirer 단독 → 단기 -3~-8% (인수 프리미엄 희석)",
+      "spinoff_parent": "spinoff_announcement → 모회사 주가 하락이 일반적 (알짜 자회사 분리 → 모회사 할인)"
+    }
+  },
+  "version_history": [
+    {
+      "version": "1.4",
+      "date": "2026-04-12",
+      "changes": "medical_conference + conference_presentation 신규 추가 (바이오 학회 트래킹 시스템 v1.0)",
+      "source": "bio_conference_tracker.py"
+    },
+    {
+      "version": "1.3",
+      "date": "2026-04-12",
+      "changes": "Event_Driven/ 미통합 항목 반영: guidance_raise/cut(신규), buyback(신규), spinoff(신규), earnings_beat/miss 섹터반응+IV크러시+유동성창구, acquisition_target/tender_offer/activist 강화, index_inclusion/exclusion Russell+MSCI 데이터 추가",
+      "source": "Earnings_PEAD_Pattern.md, MA_Arbitrage_Patterns.md, Index_Reconstitution_Activist_Patterns.md, GS_Event_Trading_Research_5Papers.md"
+    }
+  ]
+}

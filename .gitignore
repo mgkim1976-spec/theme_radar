@@ -1,0 +1,26 @@
+.env
+logs/
+data/youtube/*/transcripts/
+data/youtube/*/extractions_v2/
+data/prices/
+data/reference/compiled/
+__pycache__/
+
+# 사용자별 설정 (개인 정보 — 예시 파일은 commit, 실제 파일은 제외)
+config/project.yaml
+config/channels.yaml
+config/channels.txt
+.DS_Store
+*.pyc
+
+# Vault (사용자별 분석 결과 — Obsidian이 별도 관리)
+vault/
+
+# Claude Code 내부 상태
+.claude/
+
+# vocabulary snapshot 메타 (sync_vocabularies가 재생성)
+data/reference/vocabularies/_provenance.json
+
+# 사용자별 ticker alias (init_project가 생성)
+data/reference/ticker_alias.json
