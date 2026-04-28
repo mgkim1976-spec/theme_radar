@@ -159,16 +159,19 @@ tags: [youtuber, auto-ingested]
 - Chart 기술적: {stats['methodology'].get('uses_chart_technical', 0)}/{stats['n']}
 - 외인·자금흐름: {stats['methodology'].get('mentions_foreign_flows', 0)}/{stats['n']}
 
-### Forward Validation (가격 피드백)
+### Forward Validation (가격 피드백, **α = vs 시장 인덱스**)
 
 """ + (
     (lambda sc: (
-        "| 윈도우 | n | mean | median | win |\n|---|---:|---:|---:|---:|\n" +
+        "| 윈도우 | n | raw | win | **α** | **α-win** |\n|---|---:|---:|---:|---:|---:|\n" +
         "\n".join(
-            f"| {w} | {sc.get(w, {}).get('n', '—')} | "
-            f"{(sc.get(w, {}) or {}).get('mean', 0)*100:+.2f}% | "
-            f"{(sc.get(w, {}) or {}).get('median', 0)*100:+.2f}% | "
-            f"{(sc.get(w, {}) or {}).get('win_rate', 0):.1%} |"
+            (lambda e: (
+                f"| {w} | {e.get('n', e.get('n_alpha','—'))} | "
+                f"{(e.get('mean') or 0)*100:+.2f}% | "
+                f"{(e.get('win_rate') or 0):.0%} | "
+                f"**{(e.get('mean_alpha') or 0)*100:+.2f}%** | "
+                f"**{(e.get('win_rate_alpha') or 0):.0%}** |"
+            ))(sc.get(w, {}) or {})
             for w in ['7d', '30d', '60d', '90d']
             if sc.get(w)
         )

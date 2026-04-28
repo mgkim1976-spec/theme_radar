@@ -27,6 +27,8 @@ OUT_PATH = COMPILED / "forward_returns.json"
 WINDOWS = [("7d", 7), ("30d", 30), ("60d", 60), ("90d", 90)]
 TODAY = date.today()
 
+# Benchmark — index-relative alpha 산출용
+BENCHMARK_TICKER = {"KRX": "069500", "US": "SPY"}  # KODEX 200 / S&P500 ETF
 
 _price_cache: dict[str, pd.DataFrame] = {}
 
@@ -74,24 +76,59 @@ def parse_yyyymmdd(s: str) -> date | None:
         return None
 
 
-def compute_returns(ticker: str, mention_date: date) -> dict:
+def _window_return(df: pd.DataFrame, mention_date: date, days: int) -> float | None:
+    """단일 윈도우 raw return. 미완료 또는 데이터 없으면 None."""
+    base = price_at(df, mention_date, "on_or_before")
+    if base is None or base <= 0:
+        return None
+    target = mention_date + timedelta(days=days)
+    if target > TODAY:
+        return None
+    future = price_at(df, target, "on_or_after")
+    if future is None:
+        return None
+    return round((future - base) / base, 5)
+
+
+def compute_returns(ticker: str, mention_date: date, market: str) -> dict:
+    """ticker 의 raw return + benchmark 대비 alpha 동시 산출.
+    market: 'KRX' | 'US' — benchmark 선택용."""
     df = load_prices(ticker)
     if df is None:
         return {"_skip": "no_price_data"}
     base = price_at(df, mention_date, "on_or_before")
     if base is None or base <= 0:
         return {"_skip": "no_base_close"}
-    out = {"base_close": base, "base_date": mention_date.isoformat()}
+
+    # 벤치마크 로드 (캐시 활용)
+    bench_ticker = BENCHMARK_TICKER.get(market)
+    bench_df = load_prices(bench_ticker) if bench_ticker else None
+
+    out = {"base_close": base, "base_date": mention_date.isoformat(),
+           "market": market, "benchmark": bench_ticker}
     for label, days in WINDOWS:
         target = mention_date + timedelta(days=days)
         if target > TODAY:
-            out[label] = None  # 미완료
+            out[label] = None
+            out[f"alpha_{label}"] = None
             continue
         future = price_at(df, target, "on_or_after")
         if future is None:
             out[label] = None
+            out[f"alpha_{label}"] = None
             continue
-        out[label] = round((future - base) / base, 5)
+        ticker_ret = (future - base) / base
+        out[label] = round(ticker_ret, 5)
+
+        # benchmark return for same window
+        if bench_df is not None:
+            bench_ret = _window_return(bench_df, mention_date, days)
+            if bench_ret is not None:
+                out[f"alpha_{label}"] = round(ticker_ret - bench_ret, 5)
+            else:
+                out[f"alpha_{label}"] = None
+        else:
+            out[f"alpha_{label}"] = None
     return out
 
 
@@ -157,7 +194,7 @@ def main():
 
     for r in obs:
         mdate = datetime.fromisoformat(r["mention_date"]).date()
-        ret = compute_returns(r["ticker_resolved"], mdate)
+        ret = compute_returns(r["ticker_resolved"], mdate, r.get("market", "KRX"))
         if "_skip" in ret:
             if ret["_skip"] == "no_price_data":
                 n_skip_noprice += 1
@@ -172,10 +209,11 @@ def main():
     print(f"[forward_validator] skipped (no price data): {n_skip_noprice}")
     print(f"[forward_validator] skipped (other): {n_skip_other}")
 
-    # 윈도우별 완료율
+    # 윈도우별 완료율 (raw + alpha)
     for label, _ in WINDOWS:
-        n_complete = sum(1 for r in enriched if r["returns"].get(label) is not None)
-        print(f"  {label} 완료: {n_complete} / {n_priced}")
+        n_raw = sum(1 for r in enriched if r["returns"].get(label) is not None)
+        n_alpha = sum(1 for r in enriched if r["returns"].get(f"alpha_{label}") is not None)
+        print(f"  {label} 완료: raw={n_raw}, alpha={n_alpha} / {n_priced}")
 
     payload = {
         "version": 1,

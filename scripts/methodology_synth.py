@@ -100,7 +100,7 @@ def build_prompt(ch_meta: dict, ch_data: dict, subdir: str) -> str:
     primary_str = ", ".join(f"{k}({v})" for k, v in ch_data["primary_top5"])
     style_str = ", ".join(f"{k}={v}" for k, v in ch_data["style_flags"].items())
 
-    # Loop D: forward returns 메타 주입
+    # Loop D: forward returns 메타 주입 (alpha 우선)
     sc_entry = _load_channel_scorecard(subdir)
     forward_block = ""
     if sc_entry:
@@ -108,12 +108,22 @@ def build_prompt(ch_meta: dict, ch_data: dict, subdir: str) -> str:
         for w in ("7d", "30d", "60d", "90d"):
             e = sc_entry.get(w)
             if e:
+                n = e.get("n_alpha") or e.get("n", "?")
+                raw = e.get("mean", 0) * 100
+                alpha = (e.get("mean_alpha") or 0) * 100
+                win_a = (e.get("win_rate_alpha") or 0)
                 rows.append(
-                    f"  {w}: n={e['n']} mean={e['mean']*100:+.2f}% "
-                    f"win_rate={e['win_rate']:.1%} median={e['median']*100:+.2f}%"
+                    f"  {w}: n={n} raw={raw:+.2f}% "
+                    f"alpha(vs index)={alpha:+.2f}% alpha_win_rate={win_a:.1%}"
                 )
         if rows:
-            forward_block = "\n# Forward Validation (실측 가격 피드백 — 이 채널 발화 후 N일 종가 수익률)\n" + "\n".join(rows)
+            forward_block = (
+                "\n# Forward Validation (실측 가격 피드백)\n"
+                "  alpha = ticker_return - benchmark_return (KRX→KOSPI ETF, US→SPY)\n"
+                "  alpha 양수면 시장 대비 outperform, 음수면 underperform.\n"
+                "  raw return은 시기 효과(시장 베타) 포함이라 채널 비교에 부적합.\n\n"
+                + "\n".join(rows)
+            )
 
     return f"""당신은 한국 투자 유튜브 채널의 메소돌로지를 분석하는 애널리스트입니다.
 
@@ -145,9 +155,10 @@ def build_prompt(ch_meta: dict, ch_data: dict, subdir: str) -> str:
 추가로 마지막에:
 - **차별화 포인트**: 다른 채널과 구분되는 1–2 문장
 - **약점/사각지대**: 이 메소돌로지가 놓치기 쉬운 1문장
-- **데이터 검증** (Forward Validation 데이터가 있을 때만): 실측 win_rate·mean_return을 인용해
-  메소돌로지의 어떤 부분이 *데이터로 강하게 입증되는지* / *부분 검증* / *데이터로는 약한지*
-  를 1-2 문장으로 명시. 가설과 데이터 충돌하면 "데이터 검증으로는 …" 톤으로 솔직히 명시.
+- **데이터 검증** (Forward Validation 데이터가 있을 때만): **α (시장 대비 alpha)** 를 우선 인용해
+  메소돌로지의 어떤 부분이 *진짜 alpha*를 만드는지 / *시장 베타에 묻혔는지* / *시장보다 못 하는지*
+  를 1-2 문장으로 명시. raw return은 시기 효과 포함이므로 신뢰 낮음. α 음수면 "시장 따라가기보다도
+  못 했다" 솔직히 명시.
 
 마크다운으로 출력하세요. 헤더(#)는 사용하지 말고 bullet과 강조만 사용."""
 

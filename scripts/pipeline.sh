@@ -19,7 +19,7 @@
 
 set -u  # undefined var은 오류, 단 set -e는 안 함 (한 stage 실패가 전체 중단 방지)
 
-PIPELINE_VERSION="2.6.0"
+PIPELINE_VERSION="3.0.0"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPTS="$ROOT/scripts"
 DATA="$ROOT/data/youtube"

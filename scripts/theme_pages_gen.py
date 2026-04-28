@@ -211,16 +211,21 @@ def fmt_validation_section(canon: str, scoreboard: dict) -> str:
         e = entry.get(w)
         if not e:
             continue
+        n = e.get("n", e.get("n_alpha", "—"))
+        mean_raw = (e.get("mean") or 0) * 100
+        mean_a = (e.get("mean_alpha") or 0) * 100
+        win = (e.get("win_rate") or 0)
+        win_a = (e.get("win_rate_alpha") or 0)
         rows.append(
-            f"| {w} | {e['n']} | {e['mean']*100:+.2f}% | "
-            f"{e['median']*100:+.2f}% | {e['win_rate']:.1%} |"
+            f"| {w} | {n} | {mean_raw:+.1f}% | {win:.0%} | "
+            f"**{mean_a:+.1f}%** | **{win_a:.0%}** |"
         )
     if not rows:
         return "## Forward Validation\n\n_(완료된 윈도우 없음)_\n"
     return (
-        "## Forward Validation (가격 피드백)\n\n"
-        "| 윈도우 | n | mean | median | win |\n"
-        "|---|---:|---:|---:|---:|\n"
+        "## Forward Validation (가격 피드백, **α = vs 시장 인덱스**)\n\n"
+        "| 윈도우 | n | raw | win | **α** | **α-win** |\n"
+        "|---|---:|---:|---:|---:|---:|\n"
         + "\n".join(rows) + "\n"
     )
 

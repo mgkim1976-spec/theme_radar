@@ -27,37 +27,57 @@ WEIGHTS_PATH = COMPILED / "channel_weights.json"
 MIN_OBS = 30  # 가중치 산출에 필요한 최소 관측 수
 
 
-# 윈도우별 thresholds (대략 1/3, 2/3, 1 비례)
-WINDOW_BENCHMARK = {
-    "30d": {"market": 0.04, "scale": 5.0, "weak": 0.04},
-    "60d": {"market": 0.07, "scale": 3.5, "weak": 0.05},
-    "90d": {"market": 0.10, "scale": 2.0, "weak": 0.05},
+# Alpha 기반 가중치 — 시기 효과 제거된 진짜 신호
+# alpha = ticker_return - benchmark_return (KRX→KOSPI ETF 069500, US→SPY)
+# alpha 윈도우별 임계값 (raw return보다 절댓값 작음)
+WINDOW_ALPHA = {
+    "30d": {"strong": 0.05, "scale": 6.0, "weak": -0.03},  # 30d alpha +5% = strong, -3% = weak
+    "60d": {"strong": 0.08, "scale": 4.0, "weak": -0.05},
+    "90d": {"strong": 0.10, "scale": 3.0, "weak": -0.08},
 }
 
 
 def select_window(entry: dict) -> tuple[str, dict] | tuple[None, None]:
-    """가장 긴 (가장 높은 신호) 윈도우 중 n ≥ MIN_OBS 인 것 선택."""
+    """가장 긴 윈도우 중 n_alpha ≥ MIN_OBS 인 것 우선. alpha 데이터 없으면 raw fallback."""
     for key in ("90d", "60d", "30d"):
         w = entry.get(key)
-        if w and w.get("n", 0) >= MIN_OBS:
+        if not w:
+            continue
+        n = w.get("n_alpha", w.get("n", 0))
+        if n >= MIN_OBS:
             return key, w
     return None, None
 
 
-def compute_weight(mean: float, win_rate: float, n: int, window: str) -> float | None:
-    """rule-based 가중치 산출. 윈도우별 thresholds 반영."""
-    if n < MIN_OBS or window not in WINDOW_BENCHMARK:
+def compute_weight(mean_alpha: float | None, win_rate_alpha: float | None,
+                   n: int, window: str,
+                   mean_raw: float | None = None, win_rate_raw: float | None = None) -> float | None:
+    """alpha 기반 가중치. alpha 데이터 없으면 raw로 fallback."""
+    if n < MIN_OBS or window not in WINDOW_ALPHA:
         return None
-    bm = WINDOW_BENCHMARK[window]
-    bonus = max(0.0, mean - bm["market"]) * bm["scale"]
-    bonus = min(bonus, 0.6)
-    if mean < bm["weak"]:
-        penalty = 0.30
-    elif win_rate < 0.50:
-        penalty = 0.20
+
+    # alpha 우선
+    if mean_alpha is not None and win_rate_alpha is not None:
+        bm = WINDOW_ALPHA[window]
+        # bonus: 강한 alpha 보상 (capped)
+        bonus = max(0.0, mean_alpha - 0.0) * bm["scale"]
+        bonus = min(bonus, 0.6)
+        # penalty: 음의 alpha + 낮은 win
+        if mean_alpha < bm["weak"]:
+            penalty = 0.40  # severe — market 대비 의미 있게 손해
+        elif mean_alpha < 0:
+            penalty = 0.25  # mild negative alpha
+        elif win_rate_alpha < 0.45:
+            penalty = 0.15  # win rate 낮음
+        else:
+            penalty = 0.0
+        weight = 1.0 + bonus - penalty
+    elif mean_raw is not None:
+        # alpha 데이터 부족 시 raw로 fallback (보수적)
+        weight = 0.7 + max(0.0, mean_raw) * 1.0
     else:
-        penalty = 0.0
-    weight = 1.0 + bonus - penalty
+        return None
+
     return round(max(0.3, min(2.0, weight)), 2)
 
 
@@ -98,17 +118,27 @@ def main():
             }
             continue
 
-        n = w.get("n", 0)
-        mean = w.get("mean", 0.0)
-        win = w.get("win_rate", 0.5)
-        new_w = compute_weight(mean, win, n, window_key)
+        n_alpha = w.get("n_alpha", 0)
+        mean_alpha = w.get("mean_alpha")
+        win_alpha = w.get("win_rate_alpha")
+        n_raw = w.get("n", 0)
+        mean_raw = w.get("mean")
+        win_raw = w.get("win_rate")
+        n_used = n_alpha if mean_alpha is not None else n_raw
+        new_w = compute_weight(mean_alpha, win_alpha, n_used, window_key,
+                                mean_raw, win_raw)
 
         if new_w is None:
             chosen = default_w
             source = f"config_default (compute_weight returned None)"
         else:
             chosen = new_w
-            source = f"auto_tuned ({window_key})"
+            tag = "alpha" if mean_alpha is not None else "raw"
+            source = f"auto_tuned ({window_key}, {tag})"
+        # 표시용
+        n = n_used
+        mean = mean_alpha if mean_alpha is not None else mean_raw or 0.0
+        win = win_alpha if win_alpha is not None else win_raw or 0.5
 
         prev_w = prev.get(subdir, {}).get("weight", default_w)
         delta = round(chosen - prev_w, 2)
@@ -127,9 +157,10 @@ def main():
         }
 
     payload = {
-        "version": 1,
+        "version": 2,
         "generated_at": datetime.now().isoformat(timespec="seconds"),
-        "rule": "weight = 1.0 + max(0, mean_90d - 0.10)*2 - penalty; clamp [0.3, 2.0]",
+        "rule": "weight = 1.0 + max(0, mean_alpha)*scale - penalty (alpha-based, index-relative)",
+        "benchmark": "KRX→069500 (KODEX 200), US→SPY",
         "min_observations": MIN_OBS,
         "channels": out_channels,
     }

@@ -1,5 +1,45 @@
 # theme_radar — Changelog
 
+## v3.0.0 — 2026-04-28 (Index-relative Alpha — 시기 효과 제거)
+
+### 문제 인식
+- 채널별 데이터 기간이 다름 (86bunga 2020-2023 약세장 포함, seo_jaehyung 2024-2026 강세장)
+- raw return으로 채널 비교 시 시기 효과(시장 베타)가 chiefly 반영됨
+- seo_jaehyung +37.5%(90d) 중 25%p가 KOSPI 베타. 진짜 alpha는 +12.3%
+
+### Added — Index-relative Alpha
+- **`forward_validator.py`**: 각 ticker forward return 옆에 **alpha (= ticker_return − benchmark_return)** 자동 계산
+  - Benchmark: `KRX → 069500 (KODEX 200)` / `US → SPY`
+  - 출력: `forward_returns.json` 의 returns dict 에 `alpha_7d/30d/60d/90d` 추가
+- **`scorecard.py`**: `mean_alpha`, `win_rate_alpha`, `median_alpha` 집계 추가
+  - 모든 group (channel/event_type/canonical_theme/signal/market) 에 alpha 컬럼
+  - 표는 alpha 기준 정렬 (raw 표시는 참고용)
+- **`auto_tune_weights.py`**: alpha 기반 가중치 산출로 전환 (raw fallback 가능)
+  - bonus = max(0, mean_alpha) × scale, penalty = mean_alpha 음수 강도에 비례
+
+### 데이터 충격 — 채널 평가 완전 재정렬
+
+| 채널 | Raw 30d | **Alpha 30d** | Alpha 30d win | weight v2.5 → v3.0 |
+|---|---:|---:|---:|---|
+| seo_jaehyung | +11.1% | **+2.4%** (90d +12.3%) | 57% | 1.55 → **1.37** |
+| 86bunga | +2.6% | **+0.7%** (90d +1.7%) | 48% | 0.70 → **1.05** ↑ |
+| han_gyunsoo | +2.3% | **−5.7%** (90d −28.3%) | **33%** | 0.70 → **0.60** ↓ |
+
+**핵심 발견**:
+- **86bunga**: raw 약했지만 *alpha 양수*. 약세장 포함 시기에 KOSPI 대비 outperform → 진짜 가치투자 능력
+- **han_gyunsoo**: raw 양수였지만 *alpha −28.3%* (90d). 시장 따라가기만 했어도 훨씬 좋았을 → 시장 대비 underperformer
+- **seo_jaehyung**: raw 압도적이었지만 alpha는 절반. 베타 영향 큼. 그래도 1위
+
+### Changed — 페이지 통합
+- youtuber 페이지 Forward Validation 섹션: raw + alpha 동시 표시 (alpha 강조)
+- theme 페이지 동일
+- methodology_synth Loop D 프롬프트 alpha 우선 → LLM이 "alpha 기준 시장 대비 outperform/underperform" 톤으로 합성
+  - 86bunga 합성 결과: "7d alpha −0.74%로 단기는 못 따라가, 30d+0.69% / 60d+2.10% / 90d+1.70%로 중기에서 시장 베타 상회"
+
+### Why
+- v2.x까지: raw return 기반 평가 → 시기 효과로 왜곡
+- v3.0: alpha 기반 평가 → **시기 다른 채널 공정 비교 가능**, 진짜 alpha-generating channel 식별
+
 ## v2.6.0 — 2026-04-28 (Daily Digest — "오늘의 한 페이지")
 
 ### Added
