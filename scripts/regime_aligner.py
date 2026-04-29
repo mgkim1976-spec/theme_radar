@@ -78,6 +78,22 @@ def main():
     vocab = json.loads(MACRO_VOCAB_PATH.read_text())
     events = vocab.get("events", {})
 
+    # Local extensions: upstream vocabulary 의 regime_context 가 비어 있는 경우 보완
+    ext_path = REFERENCE / "vocabularies" / "regime_context_extensions.json"
+    n_filled = 0
+    if ext_path.exists():
+        try:
+            ext = json.loads(ext_path.read_text())
+            ext_ctx = ext.get("regime_context") or {}
+            for eid, ctx in ext_ctx.items():
+                if eid in events and not events[eid].get("regime_context"):
+                    events[eid]["regime_context"] = ctx
+                    n_filled += 1
+            if n_filled:
+                print(f"[regime_aligner] local extensions 적용: {n_filled} events 의 regime_context 보완")
+        except Exception as ex:
+            print(f"[regime_aligner] extensions 로드 실패 (무시): {ex}")
+
     taxonomy = json.loads(MACRO_TAXONOMY_PATH.read_text())
     themes = taxonomy.get("themes", {})
 

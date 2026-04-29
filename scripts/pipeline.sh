@@ -19,7 +19,7 @@
 
 set -u  # undefined var은 오류, 단 set -e는 안 함 (한 stage 실패가 전체 중단 방지)
 
-PIPELINE_VERSION="3.0.0"
+PIPELINE_VERSION="3.1.0"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPTS="$ROOT/scripts"
 DATA="$ROOT/data/youtube"
@@ -406,6 +406,12 @@ if [ "$SKIP_VALIDATION" = false ]; then
         log "  ✓ channel_weights.json 자동 갱신 (Loop A: forward returns → weight)"
     else
         log "  ✗ auto_tune_weights 실패"
+        inc_fail
+    fi
+    if python3 decay_robustness.py >> "$LOG" 2>&1; then
+        log "  ✓ decay_analysis + robustness_analysis (시간축 + outlier 검증)"
+    else
+        log "  ✗ decay_robustness 실패"
         inc_fail
     fi
 else

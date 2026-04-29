@@ -1,5 +1,36 @@
 # theme_radar — Changelog
 
+## v3.1.0 — 2026-04-30 (Decay + Robustness + Regime extensions)
+
+### Added
+- **`decay_robustness.py`**: 새 분석 모듈
+  - **Decay analysis**: 7d/30d/60d/90d alpha 진화 패턴 (rising/falling/flat shape 자동 분류)
+  - **Robustness**: outlier 효과 측정 (raw mean vs trim mean vs median)
+  - 출력: `compiled/decay_analysis.json` + `compiled/robustness_analysis.json` + `validation/decay_robustness.md`
+- **`vocabularies/regime_context_extensions.json`**: 38 macro events 의 regime_context 로컬 보완
+  - upstream investment_ontology 수정 없이 regime_aligner 정밀화
+  - aligned: 0 → 599 (+599), neutral: 578 → 31 (−547)
+- **`docs/QUERY_PATTERNS.md`**: Loop B 활용 가이드 — 매일 query 패턴 카탈로그
+
+### Changed
+- `regime_aligner.py`: local extensions 자동 로드
+- pipeline stage 6: `decay_robustness.py` 자동 cascade
+- `SYNTHESIS_2026Q2.md` v2 갱신:
+  - seo_jaehyung 데이터 백필 후 90d α: +12.27% → **+4.03%** (3x 축소)
+  - 약세장 포함 시 진짜 alpha 가 작다는 결론
+
+### Key Findings (decay shape)
+- **86bunga**: rising (+1.7% at 90d) — sustainable
+- **seo_jaehyung**: rising (+4.0% at 90d) — strongest long-term signal
+- supergaemi: falling (-9.5% at 90d) — short-term noise
+- blueoak: falling (-1.1% at 90d)
+- han_gyunsoo: falling
+
+### Robustness 결과
+- 86bunga raw +1.7% but median **−0.9%** — alpha 가 outlier 효과
+- seo_jaehyung 만 median 양수 (+0.5%) — 진짜 robust alpha
+- Event types median 기준 양수는 배당_자사주 +1.1% only
+
 ## v3.0.0 — 2026-04-28 (Index-relative Alpha — 시기 효과 제거)
 
 ### 문제 인식
