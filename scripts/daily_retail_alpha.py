@@ -122,28 +122,46 @@ def llm_synthesize(today: date, consensus: list, niche: list, warnings: list,
 
     system = (
         "당신은 한국 retail 투자자 대상 일일 마켓 뉴스레터의 시니어 에디터입니다. "
-        "주어진 데이터로 분석가 자체 voice 의 commentary 를 작성합니다.\n\n"
-        "엄격한 작성 규칙:\n"
-        "1. '~라고 봄', '~이라고 연결', '~한다는 관점', '~라고 한다' 같은 reportive 어미 절대 금지. "
-        "분석가 자신이 단정하는 voice 로 끝맺는다 ('~다', '~된다', '~할 시점', '~을 본다').\n"
-        "2. 영상 인용·출처 어휘 금지 ('영상에서', '~가 말함', '~라고 봄').\n"
-        "3. 영문 메타 표현 금지. 'today is', 'this week', 'note that' 등 영문 절대 금지.\n"
-        "4. **은유적·영어 직역체 표현 금지**. 다음 표현 사용 금지: "
-        "'번역했다/번역한다', '시그널을 보낸다', '트리거가 된다', '러브콜을 보낸다', "
-        "'바통을 넘긴다', '서곡이 된다', '메시지를 던진다'. "
-        "대신 자연스러운 한국 시장 분석 어휘 사용: '동조한다', '이어받는다', '확산된다', "
-        "'반영된다', '집중된다', '주도한다'.\n"
-        "5. raw_evidence 는 참고 데이터일 뿐 그대로 인용 금지. 핵심 인사이트만 재구성.\n"
-        "6. 각 take 는 1~2 문장 (60~140자). 군더더기 금지.\n\n"
-        "JSON 응답 키 (모든 입력 항목에 1:1 매핑되는 dict 작성 필수):\n"
-        "  - 'headline': Section 1 한 단락 (2~3 문장, 이번 주 흐름의 구조 + 핵심 축. 도입어 없이 바로 시작)\n"
-        "  - 'risk_summary': 단기 리스크 한 문장\n"
-        "  - 'consensus_takes': consensus_themes 의 모든 theme 에 대해 {theme: take}\n"
-        "  - 'niche_takes': niche_themes 의 모든 theme 에 대해 {theme: take}\n"
-        "  - 'short_pick_reasons': short_picks 의 모든 항목에 대해 {pick: 단기 진입 근거 (40~80자)}\n"
-        "  - 'medium_pick_reasons': medium_picks 의 모든 항목에 대해 {pick: 중기 보유 근거 (40~80자)}\n"
-        "  - 'one_liner': 마무리 한 문장 (단기 + 중기 강조 픽 콜아웃)\n"
-        "  - dict key 는 입력에 명시된 theme/pick 이름과 정확히 일치할 것 (대소문자·공백 포함).\n"
+        "독자는 매일 아침 이 한 페이지를 읽고 그날의 시장 프레임을 잡고 행동을 결정합니다. "
+        "단순 사실 나열이 아니라, 분석가가 직접 쓴 풍성한 commentary 를 작성합니다.\n\n"
+        "스타일 가이드:\n"
+        "1. **분석가 단정형** ('~다', '~된다', '~할 시점', '~을 본다'). reportive 어미 ('~라고 봄', "
+        "'~이라고 연결', '~라고 한다') 절대 금지.\n"
+        "2. **영상 인용·출처 어휘 금지** ('영상에서', '~가 말함').\n"
+        "3. **영문 표현 금지** ('today is', 'this week' 등). 100% 한국어.\n"
+        "4. **은유체·영어 직역체 금지**: '번역했다', '시그널을 보낸다', '트리거가 된다', "
+        "'바통을 넘긴다', '서곡이 된다' 사용 금지. 대신 '동조한다', '이어받는다', '확산된다', "
+        "'반영된다', '주도한다' 같은 자연 한국 시장 어휘 사용.\n"
+        "5. **raw_evidence 의 구체 수치 (영업이익, %, 거래대금, 일정) 는 적극 활용**. 단, 그대로 베끼지 말고 "
+        "분석가 voice 로 재구성.\n"
+        "6. **풍성하게**: 각 단락 2~3 문장, 100~200자. 인사이트가 있어야지 boilerplate 안됨.\n\n"
+        "JSON 응답 schema (모든 입력 항목에 1:1 매핑 필수):\n"
+        "{\n"
+        "  'thematic_frame': '오늘 시장의 핵심 메시지를 담은 인용구 한 문장 (분석가의 voice, 30~50자, 따옴표 빼고 작성)',\n"
+        "  'opening_summary': 'Section 1 도입 한 단락 (2~3 문장, 시장 종합 — 어떤 환경인지)',\n"
+        "  'opportunity': '기회 (Long-term) 단락 (2~3 문장, 무엇이 시장을 받치는가, 핵심 동력)',\n"
+        "  'risk': '리스크 (Short-term) 단락 (2 문장, 무엇을 경계해야 하는가)',\n"
+        "  'consensus_themes': [\n"
+        "    {\n"
+        "      'name': '입력 theme 이름과 정확히 일치',\n"
+        "      'subtitle': '테마의 본질을 담은 한 문장 (인용구, 30~60자)',\n"
+        "      'logic': '투자 논리 단락 (2~3 문장, 왜 사야 하는가)',\n"
+        "      'strategy': '구체적 전략 단락 (1~2 문장, 어떤 종목·타이밍·진입 가이드)'\n"
+        "    }\n"
+        "  ],\n"
+        "  'niche_themes': [\n"
+        "    {\n"
+        "      'name': '입력 theme 이름과 정확히 일치',\n"
+        "      'logic': '논리 단락 (1~2 문장)',\n"
+        "      'strategy': '전략 단락 (1 문장, 구체 액션)'\n"
+        "    }\n"
+        "  ],\n"
+        "  'short_pick_reasons': {pick_name: 단기 진입 근거 한 문장 (40~80자)},\n"
+        "  'medium_pick_reasons': {pick_name: 중기 보유 근거 한 문장 (40~80자)},\n"
+        "  'one_liner': '마무리 한 문장 (단기·중기 강조 픽 콜아웃)'\n"
+        "}\n"
+        "주의: consensus_themes / niche_themes 의 'name' 은 입력 그대로, "
+        "short_pick_reasons / medium_pick_reasons 의 dict key 도 입력 그대로 사용."
     )
     user = json.dumps(payload, ensure_ascii=False)
 
@@ -426,7 +444,7 @@ def neutralize_dates(text: str) -> str:
 
 
 def render_market_temp_llm(headline: str, risk_summary: str | None, warnings: list, themes_all: list[dict]) -> str:
-    """LLM 합성 결과 기반 Section 1."""
+    """legacy fallback — 사용 안 함."""
     txt = ["### **1. 🌡️ 시장 온도 (Market Sentiment)**", "", headline]
     if risk_summary:
         txt.append("")
@@ -437,6 +455,119 @@ def render_market_temp_llm(headline: str, risk_summary: str | None, warnings: li
         for _, w in warnings[:3]:
             txt.append(f"  - {neutralize_dates(w)}")
     return "\n".join(txt) + "\n\n---\n"
+
+
+def render_market_temp_v2(synth: dict, warnings: list) -> str:
+    """v2 시장 온도 — thematic_frame + opening + opportunity + risk."""
+    frame = synth.get("thematic_frame", "").strip().strip('"“”')
+    opening = synth.get("opening_summary", "").strip()
+    opportunity = synth.get("opportunity", "").strip()
+    risk_para = synth.get("risk", "").strip()
+
+    txt = ["### **1. 🌡️ 시장 온도 (Market Sentiment)**", ""]
+    if frame:
+        txt.append(f"> **\"{frame}\"**")
+        txt.append("")
+    if opening:
+        txt.append(opening)
+        txt.append("")
+    if opportunity:
+        txt.append(f"* **기회 (Long-term):** {opportunity}")
+    if risk_para:
+        txt.append(f"* **리스크 (Short-term):** {risk_para}")
+    if warnings:
+        txt.append("")
+        txt.append("**시장이 경계하는 변동성 요인**")
+        for _, w in warnings[:3]:
+            txt.append(f"  - {neutralize_dates(w)}")
+    return "\n".join(txt) + "\n\n---\n"
+
+
+def render_consensus_v2(consensus_themes: list[dict], grouped_consensus: list[tuple]) -> str:
+    """consensus 섹션 v2 — subtitle + 투자 논리 + 전략."""
+    if not consensus_themes:
+        return (
+            "### **2. 🔥 The Consensus (강력한 기회)**\n\n"
+            "_여러 시각이 한 방향으로 모이는 핵심 섹터입니다._\n\n"
+            "_(오늘은 합의된 핵심 섹터가 뚜렷하지 않습니다 — 개별 테마 위주로 접근)_\n\n---\n"
+        )
+    # group → tickers 매핑
+    name_to_tickers: dict[str, list[str]] = {}
+    for key, items in grouped_consensus:
+        nm = pretty_name(key)
+        all_tk = []
+        seen = set()
+        for it in items:
+            for tk in it["tickers"]:
+                if tk not in seen:
+                    seen.add(tk)
+                    all_tk.append(tk)
+        name_to_tickers[nm] = all_tk[:6]
+
+    out = [
+        "### **2. 🔥 The Consensus (강력한 기회)**", "",
+        "시장의 여러 시각이 한 방향으로 모이는 핵심 주도 섹터입니다.", "",
+    ]
+    for c in consensus_themes:
+        nm = (c.get("name") or "").strip()
+        sub = (c.get("subtitle") or "").strip().strip('"“”')
+        logic = (c.get("logic") or "").strip()
+        strategy = (c.get("strategy") or "").strip()
+        tickers = name_to_tickers.get(nm, [])
+        out.append(f"#### **{nm}**")
+        if sub:
+            out.append(f"**\"{sub}\"**")
+        out.append("")
+        if logic:
+            out.append(f"* **투자 논리:** {logic}")
+        if strategy:
+            out.append(f"* **전략:** {strategy}")
+        if tickers:
+            out.append(f"* **관련 종목:** {', '.join(tickers)}")
+        out.append("")
+    out.append("---")
+    return "\n".join(out) + "\n"
+
+
+def render_niche_v2(niche_themes: list[dict], grouped_niche: list[tuple]) -> str:
+    """niche 섹션 v2 — 논리 + 전략."""
+    if not niche_themes:
+        return (
+            "### **4. 💎 Unique Alpha (틈새 전략)**\n\n"
+            "_(오늘은 두드러지는 틈새 픽이 없습니다)_\n\n---\n"
+        )
+    name_to_tickers: dict[str, list[str]] = {}
+    for key, items in grouped_niche:
+        nm = pretty_name(key)
+        all_tk = []
+        seen = set()
+        for it in items:
+            for tk in it["tickers"]:
+                if tk not in seen:
+                    seen.add(tk)
+                    all_tk.append(tk)
+        name_to_tickers[nm] = all_tk[:6]
+
+    out = [
+        "### **4. 💎 Unique Alpha (틈새 전략)**", "",
+        "지수와 별개로 움직이는 개별 재료·정책 모멘텀 픽입니다.", "",
+    ]
+    for n in niche_themes:
+        nm = (n.get("name") or "").strip()
+        logic = (n.get("logic") or "").strip()
+        strategy = (n.get("strategy") or "").strip()
+        tickers = name_to_tickers.get(nm, [])
+        out.append(f"#### **{nm}**")
+        out.append("")
+        if logic:
+            out.append(f"* **논리:** {logic}")
+        if strategy:
+            out.append(f"* **전략:** {strategy}")
+        if tickers:
+            out.append(f"* **관련 종목:** {', '.join(tickers)}")
+        out.append("")
+    out.append("---")
+    return "\n".join(out) + "\n"
 
 
 def render_market_temp(views: dict, warnings: list, themes_all: list[dict], today: date) -> str:
@@ -626,19 +757,27 @@ def main():
                            short_pick_names=short_pick_names,
                            medium_pick_names=medium_pick_names)
     if synth:
-        sect1 = render_market_temp_llm(
-            synth.get("headline", ""),
-            synth.get("risk_summary"),
-            warnings, themes,
-        )
-        consensus_takes = synth.get("consensus_takes", {}) or {}
-        niche_takes = synth.get("niche_takes", {}) or {}
+        sect1 = render_market_temp_v2(synth, warnings)
+        sect2 = render_consensus_v2(synth.get("consensus_themes", []) or [], grouped["consensus"])
+        sect4 = render_niche_v2(synth.get("niche_themes", []) or [], grouped["niche"])
         short_reasons = synth.get("short_pick_reasons", {}) or {}
         medium_reasons = synth.get("medium_pick_reasons", {}) or {}
         one_liner_text = synth.get("one_liner", "")
     else:
         sect1 = render_market_temp(views, warnings, themes, today)
-        consensus_takes, niche_takes, one_liner_text = {}, {}, ""
+        sect2 = render_section(
+            "2. 🔥 The Consensus (강력한 기회)",
+            "여러 시각이 한 방향으로 모이는 핵심 섹터입니다.",
+            grouped["consensus"], args.top_consensus,
+            "_(오늘은 합의된 핵심 섹터가 뚜렷하지 않습니다)_",
+        )
+        sect4 = render_section(
+            "4. 💎 Unique Alpha (틈새 전략)",
+            "지수와 별개로 움직이는 개별 재료·정책 모멘텀 픽입니다.",
+            grouped["niche"], args.top_niche,
+            "_(오늘은 두드러지는 틈새 픽이 없습니다)_",
+        )
+        one_liner_text = ""
         short_reasons, medium_reasons = {}, {}
 
     KOR_DOW = {0: "월", 1: "화", 2: "수", 3: "목", 4: "금", 5: "토", 6: "일"}
@@ -648,14 +787,7 @@ def main():
         head += f"> **{one_liner_text}**\n\n"
     head += "---\n\n"
 
-    sect2 = render_section(
-        "2. 🔥 The Consensus (강력한 기회)",
-        "여러 시각이 한 방향으로 모이는 핵심 섹터입니다.",
-        grouped["consensus"], args.top_consensus,
-        "_(오늘은 합의된 핵심 섹터가 뚜렷하지 않습니다 — 개별 테마 위주로 접근)_",
-        takes=consensus_takes,
-    )
-    # battleground 비면 섹션 자체 생략
+    # battleground 비면 섹션 자체 생략 (현재 데이터에선 항상 비어있어서 v2 미작성)
     if grouped["battleground"]:
         sect3 = render_section(
             "3. ⚖️ The Battleground (전략적 선택)",
@@ -665,13 +797,6 @@ def main():
         )
     else:
         sect3 = ""
-    sect4 = render_section(
-        "4. 💎 Unique Alpha (틈새 전략)",
-        "지수와 별개로 움직이는 개별 재료·정책 모멘텀 픽입니다.",
-        grouped["niche"], args.top_niche,
-        "_(오늘은 두드러지는 틈새 픽이 없습니다)_",
-        takes=niche_takes,
-    )
     sect5 = render_action_plan(short_sorted, medium_sorted, short_reasons, medium_reasons)
     # 한 줄 요약은 헤더에 이미 들어갔으므로 본문 끝에서는 생략 (중복 회피)
     one = ""
