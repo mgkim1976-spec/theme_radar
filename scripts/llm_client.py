@@ -17,6 +17,8 @@ PRICING = {
     "gpt-5-nano":     {"in": 0.05, "out": 0.40},
     "gpt-5.4-nano":   {"in": 0.05, "out": 0.40},
     "gpt-4.1-nano":   {"in": 0.10, "out": 0.40},
+    "gpt-5-mini":     {"in": 0.25, "out": 2.00},
+    "gpt-5.4-mini":   {"in": 0.25, "out": 2.00},
 }
 
 DEFAULT_MODEL = "gpt-5.4-nano"

@@ -138,7 +138,9 @@ def llm_synthesize(today: date, consensus: list, niche: list, warnings: list) ->
     user = json.dumps(payload, ensure_ascii=False)
 
     try:
-        data, result = chat_json(system, user, model="gpt-5.4-nano")
+        data, result = chat_json(system, user, model="gpt-5.4-mini")
+        cost_str = f"${result.cost_usd:.4f}" if hasattr(result, "cost_usd") else "?"
+        print(f"[daily_retail_alpha] LLM cost: {cost_str} ({result.input_tokens}+{result.output_tokens} tok)")
         return data
     except Exception as e:
         print(f"[daily_retail_alpha] LLM 합성 실패 — fallback: {e}")
