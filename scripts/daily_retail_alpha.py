@@ -176,9 +176,29 @@ def group_themes(themes: list[dict]) -> dict:
 def fmt_pct(x): return f"+{x*100:.1f}%" if x else "—"
 
 
+PRETTY_REPLACEMENTS = [
+    ("ai", "AI"), ("hbm", "HBM"), ("ev", "EV"), ("etf", "ETF"),
+    ("oled", "OLED"), ("led", "LED"), ("cpu", "CPU"), ("gpu", "GPU"),
+    ("smr", "SMR"), ("ess", "ESS"), ("sk", "SK"),
+]
+
+
 def pretty_name(s: str) -> str:
-    """canonical snake_case 를 표시용으로."""
-    return s.replace("_", " ").strip()
+    """canonical snake_case 를 표시용으로 — 약어 대문자화 포함."""
+    out = s.replace("_", " ").strip()
+    parts = out.split(" ")
+    new_parts = []
+    for p in parts:
+        lp = p.lower()
+        replaced = False
+        for src, dst in PRETTY_REPLACEMENTS:
+            if lp == src:
+                new_parts.append(dst)
+                replaced = True
+                break
+        if not replaced:
+            new_parts.append(p)
+    return " ".join(new_parts)
 
 
 def render_theme_block(name: str, items: list[dict]) -> str:
@@ -192,10 +212,9 @@ def render_theme_block(name: str, items: list[dict]) -> str:
                 all_tickers.append(tk)
     tk_str = ", ".join(all_tickers[:6]) if all_tickers else None
 
-    # 가장 충실한 rationale 1개 → 1~2 문장으로 압축
+    # 가장 충실한 rationale 1개 → 1~2 문장으로 압축, 시점 단어 normalize
     best_rationale = max(items, key=lambda x: len(x["rationale"]))["rationale"]
-    # 첫 번째 마침표 또는 130자 컷
-    snippet = best_rationale
+    snippet = neutralize_dates(best_rationale)
     for end in [".", "다.", "음.", "함.", "임."]:
         idx = snippet.find(end, 50)
         if 50 < idx < 180:
@@ -215,24 +234,78 @@ def render_theme_block(name: str, items: list[dict]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def render_market_temp(views: dict, warnings: list, n_themes_passed: int, n_themes_total: int) -> str:
-    """1. 시장 온도 — 뉴스레터 에디터 톤. 출처 노출 없음."""
-    all_views = []
-    for ch_views in views.values():
-        all_views.extend(ch_views)
-    all_views.sort(key=len, reverse=True)
-    primary_view = all_views[0][:260].rstrip(" ,.·") if all_views else ""
+DATE_WORDS = [
+    "월요일", "화요일", "수요일", "목요일", "금요일",
+    "어제", "오늘", "지난주", "지난 주", "이번주", "이번 주",
+    "전일", "당일", "오늘은", "어제는", "어제부터",
+]
 
-    risks = [w for _, w in warnings[:3]]
+
+def neutralize_dates(text: str) -> str:
+    """raw 텍스트의 요일·시점 표현을 일반화 — 발행일 기준 충돌 방지."""
+    out = text
+    # 조사 붙은 형태 먼저 처리 (긴 패턴 우선)
+    replacements = [
+        ("월요일은", "최근"), ("화요일은", "최근"), ("수요일은", "최근"),
+        ("목요일은", "최근"), ("금요일은", "최근"),
+        ("월요일에는", "최근"), ("화요일에는", "최근"), ("수요일에는", "최근"),
+        ("목요일에는", "최근"), ("금요일에는", "최근"),
+        ("월요일에", "최근"), ("화요일에", "최근"), ("수요일에", "최근"),
+        ("목요일에", "최근"), ("금요일에", "최근"),
+        ("월요일", "최근"), ("화요일", "최근"), ("수요일", "최근"),
+        ("목요일", "최근"), ("금요일", "최근"),
+        ("어제는", "최근"), ("어제부터", "최근"),
+        ("오늘은", "최근"), ("오늘부터", "최근"),
+        ("지난주는", "최근"), ("지난 주는", "최근"),
+        ("지난주", "최근"), ("지난 주", "최근"),
+        ("이번주는", "이번 주"), ("이번 주는", "이번 주"),
+    ]
+    for src, dst in replacements:
+        out = out.replace(src, dst)
+    while "최근 최근" in out:
+        out = out.replace("최근 최근", "최근")
+    return out
+
+
+def render_market_temp(views: dict, warnings: list, themes_all: list[dict], today: date) -> str:
+    """1. 시장 온도 — 오늘 발행 관점에서 narrative 합성."""
+    # α 통과 테마 중 가장 빈번한 키워드 (영상 출처 텍스트가 아닌, 오늘 통과 테마 기반)
+    from collections import Counter
+    canon_counts = Counter()
+    all_tickers_flat = []
+    for t in themes_all:
+        key = t.get("canon") or t["name"][:30]
+        canon_counts[key] += 1
+        for tk in t.get("tickers", []):
+            all_tickers_flat.append(tk)
+    top_themes = [pretty_name(c) for c, _ in canon_counts.most_common(3)]
+    top_tickers = [tk for tk, _ in Counter(all_tickers_flat).most_common(5)]
+
+    # 오늘 시점 헤드라인 1 문장 (data-driven, 출처 의존 없음)
+    if top_themes:
+        headline = (
+            f"이번 주 시장은 **{', '.join(top_themes)}** 를 중심으로 흐름이 형성되고 있습니다."
+        )
+    else:
+        headline = "이번 주는 시장 모멘텀이 분산된 구간입니다."
+
+    # ticker 한 줄
+    ticker_line = ""
+    if top_tickers:
+        ticker_line = f"가장 자주 거론된 종목은 **{', '.join(top_tickers[:5])}** 입니다."
+
+    risks = [neutralize_dates(w) for _, w in warnings[:3]]
 
     txt = [
         "### **1. 🌡️ 시장 온도 (Market Sentiment)**",
         "",
+        headline,
     ]
-    if primary_view:
-        txt.append(f"{primary_view}.")
+    if ticker_line:
         txt.append("")
+        txt.append(ticker_line)
     if risks:
+        txt.append("")
         txt.append("**이번 주 주의할 리스크**")
         for w in risks:
             txt.append(f"  - {w}")
@@ -361,13 +434,15 @@ def main():
                 total += len(d.get("themes", []))
             except Exception: pass
 
+    KOR_DOW = {0: "월", 1: "화", 2: "수", 3: "목", 4: "금", 5: "토", 6: "일"}
+    dow = KOR_DOW.get(today.weekday(), "")
     head = (
-        f"# 📊 {today.strftime('%Y.%m.%d')} Market Insight & Strategy\n\n"
+        f"# 📊 {today.strftime('%Y.%m.%d')} ({dow}) Market Insight & Strategy\n\n"
         "> 시장에서 떠오르는 핵심 테마와 종목, 그리고 이번 주 행동 지침.\n\n"
         "---\n\n"
     )
 
-    sect1 = render_market_temp(views, warnings, len(themes), total)
+    sect1 = render_market_temp(views, warnings, themes, today)
     sect2 = render_section(
         "2. 🔥 The Consensus (강력한 기회)",
         "여러 시각이 한 방향으로 모이는 핵심 섹터입니다.",
