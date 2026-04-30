@@ -277,6 +277,12 @@ if [ "$SKIP_THEMES" = false ]; then
         log "  ✗ phase_mapper 실패"
         inc_fail
     fi
+    if python3 phase_tracker.py >> "$LOG" 2>&1; then
+        log "  ✓ phase_tracking.json (theme별 현재 phase 추정)"
+    else
+        log "  ✗ phase_tracker 실패"
+        inc_fail
+    fi
     if python3 theme_pages_gen.py >> "$LOG" 2>&1; then
         log "  ✓ themes/*.md 갱신 (multi-axis events + 종목 섹션 포함)"
     else

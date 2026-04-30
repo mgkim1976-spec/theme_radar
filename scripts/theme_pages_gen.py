@@ -96,6 +96,15 @@ def load_event_taxonomies() -> dict:
             out["phase"] = p.get("mapping", {})
         except Exception:
             pass
+    # phase_tracking: theme_name → 현재 phase 추정 (v3.2)
+    out["phase_track"] = {}
+    pt = COMPILED / "phase_tracking.json"
+    if pt.exists():
+        try:
+            t = json.loads(pt.read_text())
+            out["phase_track"] = t.get("themes", {})
+        except Exception:
+            pass
     return out
 
 
@@ -198,6 +207,16 @@ def fmt_event_section(canon: str, taxonomies: dict) -> str:
                 top = phase_match[0]
                 rows.append(f"- **⏱️ 유사 historical**: `{top['historical_event_id']}` "
                             f"({top.get('date', '?')}, {top.get('category', '?')})")
+
+    # 현재 phase 추정 (v3.2)
+    pt_entry = taxonomies.get("phase_track", {}).get(canon)
+    if pt_entry:
+        ph = pt_entry.get("current_phase", "?")
+        elapsed = pt_entry.get("elapsed_days", 0)
+        conf = pt_entry.get("confidence", "?")
+        desc = pt_entry.get("phase_description", "")[:80]
+        desc_str = f" — _{desc}_" if desc else ""
+        rows.append(f"- **🎯 현재 phase**: `{ph}` (elapsed {elapsed}d, conf={conf}){desc_str}")
 
     return "## Event Classification (multi-axis)\n\n" + "\n".join(rows) + "\n"
 

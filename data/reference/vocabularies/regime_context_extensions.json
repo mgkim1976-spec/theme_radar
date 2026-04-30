@@ -43,6 +43,10 @@
     "cpi_release": "OVERHEATING 시기에 시장 영향 큼",
     "nfp_release": "EXPANSION 또는 CONTRACTION (사이클 신호)",
     "fx_intervention": "STAGFLATION 또는 OVERHEATING (자국 통화 방어)",
-    "fomc_rate_decision": "TRANSITIONAL 또는 OVERHEATING (긴축 사이클)"
+    "fomc_rate_decision": "TRANSITIONAL 또는 OVERHEATING (긴축 사이클)",
+    "ism_release": "TRANSITIONAL (경기 선행 지표 — PMI 50선 돌파/이탈로 EXPANSION/CONTRACTION 전환 신호)",
+    "gdp_release": "EXPANSION 또는 CONTRACTION (성장률 자체가 regime 정의에 직접 사용)",
+    "carry_trade_unwind": "OVERHEATING 또는 STAGFLATION (글로벌 위험회피 + 금리 변동성)",
+    "dollar_cycle_shift": "TRANSITIONAL (장기 사이클 전환 — 5-10년 단위)"
   }
 }
