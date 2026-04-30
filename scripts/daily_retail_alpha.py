@@ -33,6 +33,15 @@ TD_PATH = COMPILED / "theme_dictionary.json"
 OUT_PAGE = VAULT / "today_retail.md"
 ARCHIVE_DIR = VAULT / "daily_retail"
 
+# 비-actionable: 시장 지수만 있고 개별 종목이 없는 픽은 Action Plan 에서 제외
+INDEX_TICKERS = {"코스피", "코스닥", "S&P500", "S&P", "나스닥", "NASDAQ", "다우", "닛케이", "VIX"}
+
+# theme dedup: 같은 어두로 시작하는 canonical 은 root 로 묶음
+ROOT_GROUPS = ["반도체", "전력", "AI 데이터센터", "AI 인프라", "바이오", "원전", "조선", "방산", "로봇"]
+
+# 픽 후보에서 제외할 educational/meta theme 키워드 (canonical 에 포함 시 제외)
+PICK_STOP_KEYWORDS = ["오해", "금지", "프레임", "원칙", "기초", "장세", "조정", "변동성", "방어"]
+
 
 def load_alias_to_canon() -> dict[str, str]:
     if not TD_PATH.exists():
@@ -66,6 +75,74 @@ def expected_alpha(ch: str, signals: list, event_type: str, canon: str | None,
         return None, None, 0
     best = max(cands, key=lambda c: c[0])
     return best[0], best[1], best[2]
+
+
+def llm_synthesize(today: date, consensus: list, niche: list, warnings: list) -> dict:
+    """LLM 으로 분석가 voice prose 합성. 실패 시 None 반환 (호출자가 fallback)."""
+    try:
+        from llm_client import chat_json
+    except Exception:
+        return None
+    import os
+    if "OPENAI_API_KEY" not in os.environ:
+        return None
+
+    KOR_DOW = {0: "월", 1: "화", 2: "수", 3: "목", 4: "금", 5: "토", 6: "일"}
+    dow = KOR_DOW.get(today.weekday(), "")
+
+    def pack(items: list[tuple]) -> list[dict]:
+        out = []
+        for key, all_items in items[:6]:
+            tickers = []
+            seen = set()
+            rationales = []
+            for it in all_items:
+                for tk in it["tickers"]:
+                    if tk not in seen:
+                        seen.add(tk)
+                        tickers.append(tk)
+                if it.get("rationale"):
+                    rationales.append(it["rationale"][:180])
+            out.append({
+                "theme": pretty_name(key),
+                "tickers": tickers[:6],
+                "raw_evidence": " | ".join(rationales[:2])[:400],
+            })
+        return out
+
+    payload = {
+        "publish_date": f"{today.isoformat()} ({dow})",
+        "consensus_themes": pack(consensus),
+        "niche_themes": pack(niche),
+        "warnings": [w[1] for w in warnings[:3]],
+    }
+
+    system = (
+        "당신은 한국 retail 투자자 대상 일일 마켓 뉴스레터의 시니어 에디터입니다. "
+        "주어진 데이터로 분석가 자체 voice 의 commentary 를 작성합니다.\n\n"
+        "엄격한 작성 규칙:\n"
+        "1. '~라고 봄', '~이라고 연결', '~한다는 관점', '~라고 한다' 같은 reportive 어미 절대 금지. "
+        "분석가 자신이 단정하는 voice 로 끝맺는다 ('~다', '~된다', '~할 시점', '~을 본다').\n"
+        "2. 영상 인용·출처 어휘 금지 ('영상에서', '~가 말함', '~라고 봄').\n"
+        "3. 영문 메타 표현 금지 ('today is', 'this week', 'note that' 등 영문 표현 절대 사용 금지). "
+        "결과는 100% 자연스러운 한국어 commentary 만.\n"
+        "4. raw_evidence 는 참고 데이터일 뿐 그대로 인용 금지. 핵심 인사이트만 분석가 톤으로 재구성.\n"
+        "5. 각 take 는 1~2 문장 (60~140자). 군더더기 금지.\n\n"
+        "JSON 응답 키:\n"
+        "  - 'headline': Section 1 한 단락 (2~3 문장, 이번 주 흐름의 구조 + 핵심 축. 도입어 없이 바로 시작)\n"
+        "  - 'risk_summary': 단기 리스크 한 문장\n"
+        "  - 'consensus_takes': {theme_name: take}\n"
+        "  - 'niche_takes': {theme_name: take}\n"
+        "  - 'one_liner': 마무리 한 문장 (단기 + 중기 강조 픽 콜아웃)\n"
+    )
+    user = json.dumps(payload, ensure_ascii=False)
+
+    try:
+        data, result = chat_json(system, user, model="gpt-5.4-nano")
+        return data
+    except Exception as e:
+        print(f"[daily_retail_alpha] LLM 합성 실패 — fallback: {e}")
+        return None
 
 
 def collect_themes(lookback_days: int, today: date, lookups: dict, alias_to_canon: dict) -> list[dict]:
@@ -201,6 +278,72 @@ def pretty_name(s: str) -> str:
     return " ".join(new_parts)
 
 
+def find_root(canon_pretty: str) -> str:
+    """canonical 의 root 그룹 찾기 — 같은 root 는 dedup 대상."""
+    for root in ROOT_GROUPS:
+        if canon_pretty.startswith(root):
+            return root
+    return canon_pretty
+
+
+def has_actionable_ticker(tickers: list[str]) -> bool:
+    """개별 종목이 1개라도 있는지 (지수만 있으면 false)."""
+    return any(t for t in tickers if t and t not in INDEX_TICKERS)
+
+
+def is_meta_theme(canon_pretty: str) -> bool:
+    """educational/meta theme 인지 — 픽 후보에서 제외."""
+    return any(kw in canon_pretty for kw in PICK_STOP_KEYWORDS)
+
+
+def dedup_picks_by_root(picks: list[tuple]) -> list[tuple]:
+    """[(key, theme), ...] 에서 같은 root 는 가장 좋은 α 만 남기고 ticker 합집합."""
+    by_root: dict[str, dict] = {}
+    for key, t in picks:
+        root = find_root(pretty_name(key))
+        cur = by_root.get(root)
+        if not cur:
+            by_root[root] = {"key": key, "theme": t, "tickers": list(t["tickers"])}
+        else:
+            # 더 높은 α 면 교체, 종목은 합치기
+            if t.get("alpha_30d", 0) > cur["theme"].get("alpha_30d", 0) or \
+               t.get("alpha_90d", 0) > cur["theme"].get("alpha_90d", 0):
+                cur["key"] = key
+                cur["theme"] = t
+            for tk in t["tickers"]:
+                if tk not in cur["tickers"]:
+                    cur["tickers"].append(tk)
+    out = []
+    for root, info in by_root.items():
+        info["theme"] = dict(info["theme"])
+        info["theme"]["tickers"] = info["tickers"][:6]
+        out.append((root, info["theme"]))
+    return out
+
+
+def render_theme_block_llm(name: str, items: list[dict], take: str | None) -> str:
+    """LLM take 가 있으면 그걸로, 없으면 fallback."""
+    all_tickers = []
+    seen = set()
+    for it in items:
+        for tk in it["tickers"]:
+            if tk not in seen:
+                seen.add(tk)
+                all_tickers.append(tk)
+    tk_str = ", ".join(all_tickers[:6]) if all_tickers else None
+
+    lines = [f"#### **{pretty_name(name)[:60]}**", ""]
+    if take:
+        lines.append(take.strip())
+    else:
+        # fallback to old rendering
+        return render_theme_block(name, items)
+    if tk_str:
+        lines.append("")
+        lines.append(f"> **관련 종목:** {tk_str}")
+    return "\n".join(lines) + "\n"
+
+
 def render_theme_block(name: str, items: list[dict]) -> str:
     """한 테마 블록 — 뉴스레터 톤, 채널/날짜/conviction 노출 없음."""
     all_tickers = []
@@ -267,6 +410,20 @@ def neutralize_dates(text: str) -> str:
     return out
 
 
+def render_market_temp_llm(headline: str, risk_summary: str | None, warnings: list, themes_all: list[dict]) -> str:
+    """LLM 합성 결과 기반 Section 1."""
+    txt = ["### **1. 🌡️ 시장 온도 (Market Sentiment)**", "", headline]
+    if risk_summary:
+        txt.append("")
+        txt.append(f"> {risk_summary}")
+    if warnings:
+        txt.append("")
+        txt.append("**이번 주 주의할 리스크**")
+        for _, w in warnings[:3]:
+            txt.append(f"  - {neutralize_dates(w)}")
+    return "\n".join(txt) + "\n\n---\n"
+
+
 def render_market_temp(views: dict, warnings: list, themes_all: list[dict], today: date) -> str:
     """1. 시장 온도 — 오늘 발행 관점에서 narrative 합성."""
     # α 통과 테마 중 가장 빈번한 키워드 (영상 출처 텍스트가 아닌, 오늘 통과 테마 기반)
@@ -312,22 +469,30 @@ def render_market_temp(views: dict, warnings: list, themes_all: list[dict], toda
     return "\n".join(txt) + "\n\n---\n"
 
 
-def render_section(title: str, sub: str, groups: list[tuple], top_n: int, empty_msg: str) -> str:
+def render_section(title: str, sub: str, groups: list[tuple], top_n: int, empty_msg: str,
+                   takes: dict | None = None) -> str:
     out = [f"### **{title}**", "", f"_{sub}_", ""]
     if not groups:
         out.append(empty_msg)
         return "\n".join(out) + "\n\n---\n"
     for key, items in groups[:top_n]:
-        out.append(render_theme_block(key, items))
+        take = (takes or {}).get(pretty_name(key)) if takes else None
+        out.append(render_theme_block_llm(key, items, take))
     return "\n".join(out) + "\n---\n"
 
 
 def render_action_plan(themes_all: list[dict], today: date) -> str:
-    """5. Action Plan — 단기/중기 분리, 뉴스레터 톤."""
+    """5. Action Plan — 단기/중기 분리, dedup + 비-actionable 제외."""
     short = {}
     medium = {}
     for t in themes_all:
         key = t.get("canon") or t["name"][:40]
+        # 비-actionable (지수만, 종목 없음) 제외
+        if not has_actionable_ticker(t.get("tickers", [])):
+            continue
+        # educational/meta theme 제외
+        if is_meta_theme(pretty_name(key)):
+            continue
         if (t.get("alpha_30d") or 0) > 0:
             cur = short.get(key)
             if not cur or (t["alpha_30d"] > cur["alpha_30d"]):
@@ -337,8 +502,11 @@ def render_action_plan(themes_all: list[dict], today: date) -> str:
             if not cur or (t["alpha_90d"] > cur["alpha_90d"]):
                 medium[key] = t
 
-    short_sorted = sorted(short.items(), key=lambda kv: -(kv[1]["alpha_30d"] or 0))
-    medium_sorted = sorted(medium.items(), key=lambda kv: -(kv[1]["alpha_90d"] or 0))
+    # root 별 dedup — 반도체/반도체_AI/반도체_수급 → '반도체' 1 줄로 통합
+    short_dedup = dedup_picks_by_root(list(short.items()))
+    medium_dedup = dedup_picks_by_root(list(medium.items()))
+    short_sorted = sorted(short_dedup, key=lambda kv: -(kv[1]["alpha_30d"] or 0))
+    medium_sorted = sorted(medium_dedup, key=lambda kv: -(kv[1]["alpha_90d"] or 0))
 
     def fmt_row(key: str, t: dict, window: str) -> str:
         a = t[f"alpha_{window}"] * 100
@@ -348,31 +516,26 @@ def render_action_plan(themes_all: list[dict], today: date) -> str:
     plan = [
         "### **5. 📌 최종 행동 지침 (Action Plan)**",
         "",
-        "**🚀 단기 매수 후보 (1주~1개월 호흡)**",
-        "",
-        "지난 데이터에서 비슷한 패턴이 1개월 안에 평균적으로 시장 대비 양호한 흐름을 보였던 테마입니다.",
+        "**🚀 단기 매수 후보 (1주~1개월)**",
         "",
     ]
     if short_sorted:
         for k, t in short_sorted[:6]:
             plan.append(fmt_row(k, t, "30d"))
     else:
-        plan.append("_(오늘은 단기 진입 후보가 부족 — 관망 권장)_")
+        plan.append("_(오늘은 단기 후보가 부족 — 관망 권장)_")
     plan.append("")
-    plan.append("**🛤️ 중기 코어 후보 (3개월 호흡)**")
-    plan.append("")
-    plan.append("3개월 단위로 누적 시 시장 대비 양호한 성과 패턴이 누적된 테마입니다.")
+    plan.append("**🛤️ 중기 코어 후보 (3개월)**")
     plan.append("")
     if medium_sorted:
         for k, t in medium_sorted[:6]:
             plan.append(fmt_row(k, t, "90d"))
     else:
-        plan.append("_(오늘은 중기 진입 후보가 부족 — 관망 권장)_")
+        plan.append("_(오늘은 중기 후보가 부족 — 관망 권장)_")
     plan.append("")
-    plan.append("**💰 현금 관리**")
-    plan.append("- 단일 종목 비중은 전체의 5~10% 이내")
-    plan.append("- 변동성 구간에는 현금 비중 30% 이상 유지 권장")
-    plan.append("- 위 후보는 과거 패턴 기반 참고 자료이며 미래 수익을 보장하지 않습니다")
+    plan.append("**💰 포지션 관리**")
+    plan.append("- 단일 종목 5~10% 이내, 변동성 구간엔 현금 30% 이상")
+    plan.append("- 과거 패턴 기반 참고 자료이며 미래 수익을 보장하지 않습니다")
     plan.append("")
     return "\n".join(plan) + "\n"
 
@@ -434,35 +597,55 @@ def main():
                 total += len(d.get("themes", []))
             except Exception: pass
 
+    # LLM 합성 (분석가 voice) — 실패 시 raw rationale fallback
+    synth = llm_synthesize(today, grouped["consensus"], grouped["niche"], warnings)
+    if synth:
+        sect1 = render_market_temp_llm(
+            synth.get("headline", ""),
+            synth.get("risk_summary"),
+            warnings, themes,
+        )
+        consensus_takes = synth.get("consensus_takes", {}) or {}
+        niche_takes = synth.get("niche_takes", {}) or {}
+        one_liner_text = synth.get("one_liner", "")
+    else:
+        sect1 = render_market_temp(views, warnings, themes, today)
+        consensus_takes, niche_takes, one_liner_text = {}, {}, ""
+
     KOR_DOW = {0: "월", 1: "화", 2: "수", 3: "목", 4: "금", 5: "토", 6: "일"}
     dow = KOR_DOW.get(today.weekday(), "")
-    head = (
-        f"# 📊 {today.strftime('%Y.%m.%d')} ({dow}) Market Insight & Strategy\n\n"
-        "> 시장에서 떠오르는 핵심 테마와 종목, 그리고 이번 주 행동 지침.\n\n"
-        "---\n\n"
-    )
+    head = f"# 📊 {today.strftime('%Y.%m.%d')} ({dow}) Market Insight & Strategy\n\n"
+    if one_liner_text:
+        head += f"> **{one_liner_text}**\n\n"
+    head += "---\n\n"
 
-    sect1 = render_market_temp(views, warnings, themes, today)
     sect2 = render_section(
         "2. 🔥 The Consensus (강력한 기회)",
         "여러 시각이 한 방향으로 모이는 핵심 섹터입니다.",
         grouped["consensus"], args.top_consensus,
         "_(오늘은 합의된 핵심 섹터가 뚜렷하지 않습니다 — 개별 테마 위주로 접근)_",
+        takes=consensus_takes,
     )
-    sect3 = render_section(
-        "3. ⚖️ The Battleground (전략적 선택)",
-        "투자 성향에 따라 진입 타이밍을 달리해야 할 승부처입니다.",
-        grouped["battleground"], args.top_battleground,
-        "_(오늘은 시장이 뚜렷한 분기점에 있지 않습니다)_",
-    )
+    # battleground 비면 섹션 자체 생략
+    if grouped["battleground"]:
+        sect3 = render_section(
+            "3. ⚖️ The Battleground (전략적 선택)",
+            "투자 성향에 따라 진입 타이밍을 달리해야 할 승부처입니다.",
+            grouped["battleground"], args.top_battleground,
+            "",
+        )
+    else:
+        sect3 = ""
     sect4 = render_section(
         "4. 💎 Unique Alpha (틈새 전략)",
         "지수와 별개로 움직이는 개별 재료·정책 모멘텀 픽입니다.",
         grouped["niche"], args.top_niche,
         "_(오늘은 두드러지는 틈새 픽이 없습니다)_",
+        takes=niche_takes,
     )
     sect5 = render_action_plan(themes, today)
-    one = render_one_liner(themes)
+    # 한 줄 요약은 헤더에 이미 들어갔으므로 본문 끝에서는 생략 (중복 회피)
+    one = ""
 
     page = head + sect1 + sect2 + sect3 + sect4 + sect5 + one
 
