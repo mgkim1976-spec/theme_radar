@@ -176,9 +176,13 @@ def group_themes(themes: list[dict]) -> dict:
 def fmt_pct(x): return f"+{x*100:.1f}%" if x else "—"
 
 
+def pretty_name(s: str) -> str:
+    """canonical snake_case 를 표시용으로."""
+    return s.replace("_", " ").strip()
+
+
 def render_theme_block(name: str, items: list[dict]) -> str:
-    """한 canonical theme 블록 — 채널명·출처 노출 없이 narrative 형식."""
-    # 종목 합치기
+    """한 테마 블록 — 뉴스레터 톤, 채널/날짜/conviction 노출 없음."""
     all_tickers = []
     seen = set()
     for it in items:
@@ -186,59 +190,50 @@ def render_theme_block(name: str, items: list[dict]) -> str:
             if tk not in seen:
                 seen.add(tk)
                 all_tickers.append(tk)
-    tk_str = ", ".join(all_tickers[:6]) if all_tickers else "—"
+    tk_str = ", ".join(all_tickers[:6]) if all_tickers else None
+
+    # 가장 충실한 rationale 1개 → 1~2 문장으로 압축
+    best_rationale = max(items, key=lambda x: len(x["rationale"]))["rationale"]
+    # 첫 번째 마침표 또는 130자 컷
+    snippet = best_rationale
+    for end in [".", "다.", "음.", "함.", "임."]:
+        idx = snippet.find(end, 50)
+        if 50 < idx < 180:
+            snippet = snippet[: idx + len(end)]
+            break
+    snippet = snippet[:200].strip()
 
     stances = sorted({it["stance"] for it in items})
-    convs = [it["conviction"] for it in items]
-    conv_max = max(convs) if convs else 0
+    is_bullish = "bullish" in stances and "bearish" not in stances
+    tone = "**핵심 논리**" if is_bullish else "**투자 논리**"
 
-    # 가장 충실한 rationale 1개 (가장 긴 것)
-    best_rationale = max(items, key=lambda x: len(x["rationale"]))["rationale"][:200]
-
-    # 단기/중기 라벨
-    has_30 = any((it.get("alpha_30d") or 0) > 0 for it in items)
-    has_90 = any((it.get("alpha_90d") or 0) > 0 for it in items)
-    if has_30 and has_90:
-        tag = "단기·중기 모두 매칭"
-    elif has_30:
-        tag = "단기 매칭"
-    elif has_90:
-        tag = "중기 매칭"
-    else:
-        tag = ""
-
-    stance_tone = ", ".join(stances)
-    lines = [
-        f"#### **{name[:60]}**",
-        f"- **투자 논리:** {best_rationale}",
-        f"- **관련 종목:** {tk_str}",
-        f"- **시장 시각:** {stance_tone} (강도 {conv_max}/5){' · ' + tag if tag else ''}",
-    ]
+    lines = [f"#### **{pretty_name(name)[:60]}**", ""]
+    lines.append(f"{snippet}")
+    if tk_str:
+        lines.append("")
+        lines.append(f"> **관련 종목:** {tk_str}")
     return "\n".join(lines) + "\n"
 
 
 def render_market_temp(views: dict, warnings: list, n_themes_passed: int, n_themes_total: int) -> str:
-    """1. 시장 온도 — 채널명 노출 없이 시황·리스크 narrative 합성."""
-    # 모든 view 모아 가장 긴 것 1~2개만 발췌 (출처 표시 없이)
+    """1. 시장 온도 — 뉴스레터 에디터 톤. 출처 노출 없음."""
     all_views = []
     for ch_views in views.values():
         all_views.extend(ch_views)
     all_views.sort(key=len, reverse=True)
-    primary_view = (all_views[0][:280] + "…") if all_views else ""
+    primary_view = all_views[0][:260].rstrip(" ,.·") if all_views else ""
 
     risks = [w for _, w in warnings[:3]]
 
     txt = [
         "### **1. 🌡️ 시장 온도 (Market Sentiment)**",
         "",
-        f"> 최근 시장 흐름·리스크·기회 종합. 후속 Action Plan 은 historical α 양수 패턴 매칭 픽만 표시 ({n_themes_passed}/{n_themes_total} themes).",
-        "",
     ]
     if primary_view:
-        txt.append(f"**현재 시장:** {primary_view}")
+        txt.append(f"{primary_view}.")
         txt.append("")
     if risks:
-        txt.append("**단기 리스크 (Short-term):**")
+        txt.append("**이번 주 주의할 리스크**")
         for w in risks:
             txt.append(f"  - {w}")
     return "\n".join(txt) + "\n\n---\n"
@@ -255,9 +250,7 @@ def render_section(title: str, sub: str, groups: list[tuple], top_n: int, empty_
 
 
 def render_action_plan(themes_all: list[dict], today: date) -> str:
-    """5. Action Plan — α 통과 픽만 단기/중기로 분리해 표시."""
-    # 단기 = 30d α 양수 / 중기 = 90d α 양수 (양쪽에 모두 들어갈 수 있음)
-    # canonical theme 단위로 dedup
+    """5. Action Plan — 단기/중기 분리, 뉴스레터 톤."""
     short = {}
     medium = {}
     for t in themes_all:
@@ -275,45 +268,44 @@ def render_action_plan(themes_all: list[dict], today: date) -> str:
     medium_sorted = sorted(medium.items(), key=lambda kv: -(kv[1]["alpha_90d"] or 0))
 
     def fmt_row(key: str, t: dict, window: str) -> str:
-        a = t[f"alpha_{window}"]
-        n = t[f"n_{window}"]
-        tk = ", ".join(t["tickers"][:4]) if t["tickers"] else "—"
-        return (
-            f"- **{key[:30]}** · expected α(과거 {window} median): **+{a*100:.1f}%** "
-            f"(n={n}) · 종목: {tk}"
-        )
+        a = t[f"alpha_{window}"] * 100
+        tk = ", ".join(t["tickers"][:4]) if t["tickers"] else "_(개별 종목 미언급)_"
+        return f"- **{pretty_name(key)[:30]}** _(과거 평균 +{a:.1f}%)_ — {tk}"
 
     plan = [
         "### **5. 📌 최종 행동 지침 (Action Plan)**",
         "",
-        "_과거 동일 패턴이 양수 α 를 만들었던 조합만 표시합니다. 같은 테마가 양쪽에 동시에 뜨면 가장 안정적인 픽._",
+        "**🚀 단기 매수 후보 (1주~1개월 호흡)**",
         "",
-        f"#### **🚀 단기 (1주~1개월, 과거 30d α 양수) — {len(short_sorted)}건**",
+        "지난 데이터에서 비슷한 패턴이 1개월 안에 평균적으로 시장 대비 양호한 흐름을 보였던 테마입니다.",
         "",
     ]
     if short_sorted:
-        for k, t in short_sorted[:8]:
+        for k, t in short_sorted[:6]:
             plan.append(fmt_row(k, t, "30d"))
     else:
-        plan.append("_(오늘 통과 픽 없음 — 단기 트레이딩 자제)_")
+        plan.append("_(오늘은 단기 진입 후보가 부족 — 관망 권장)_")
     plan.append("")
-    plan.append(f"#### **🛤️ 중기 (3개월, 과거 90d α 양수) — {len(medium_sorted)}건**")
+    plan.append("**🛤️ 중기 코어 후보 (3개월 호흡)**")
+    plan.append("")
+    plan.append("3개월 단위로 누적 시 시장 대비 양호한 성과 패턴이 누적된 테마입니다.")
     plan.append("")
     if medium_sorted:
-        for k, t in medium_sorted[:8]:
+        for k, t in medium_sorted[:6]:
             plan.append(fmt_row(k, t, "90d"))
     else:
-        plan.append("_(오늘 통과 픽 없음 — 중기 진입 자제)_")
+        plan.append("_(오늘은 중기 진입 후보가 부족 — 관망 권장)_")
     plan.append("")
-    plan.append("**현금 관리**")
-    plan.append("- 위 픽들은 historical 패턴 매칭이며 미래 보장 아님")
-    plan.append("- 단일 종목 비중 5~10% 상한, 전체 현금 30%+ 권장")
+    plan.append("**💰 현금 관리**")
+    plan.append("- 단일 종목 비중은 전체의 5~10% 이내")
+    plan.append("- 변동성 구간에는 현금 비중 30% 이상 유지 권장")
+    plan.append("- 위 후보는 과거 패턴 기반 참고 자료이며 미래 수익을 보장하지 않습니다")
     plan.append("")
     return "\n".join(plan) + "\n"
 
 
 def render_one_liner(themes_all: list[dict]) -> str:
-    """한 줄 요약 — 단기 1위 + 중기 1위 픽 기반."""
+    """한 줄 요약 — 뉴스레터 마무리."""
     short_top = max(
         ((t for t in themes_all if (t.get("alpha_30d") or 0) > 0)),
         key=lambda t: t["alpha_30d"], default=None,
@@ -324,14 +316,14 @@ def render_one_liner(themes_all: list[dict]) -> str:
     )
     parts = []
     if short_top:
-        nm = short_top.get("canon") or short_top["name"][:25]
+        nm = pretty_name(short_top.get("canon") or short_top["name"][:25])
         parts.append(f"단기는 **{nm[:25]}**")
     if medium_top:
-        nm = medium_top.get("canon") or medium_top["name"][:25]
-        parts.append(f"중기는 **{nm[:25]}**")
+        nm = pretty_name(medium_top.get("canon") or medium_top["name"][:25])
+        parts.append(f"중기는 **{nm[:25]}** 중심으로")
     if not parts:
-        return "\n> **한 줄 요약:** 오늘은 α 패턴 통과 픽이 부족 — 관망 권장.\n"
-    return f"\n> **한 줄 요약:** {' · '.join(parts)} — historical α 양수 매칭만 추려 분할 진입.\n"
+        return "\n> **한 줄 요약:** 오늘은 진입 후보가 부족합니다. 관망 권장.\n"
+    return f"\n> **한 줄 요약:** {' · '.join(parts)} 분할 매수 — 무리한 추격은 금물.\n"
 
 
 def main():
@@ -371,29 +363,28 @@ def main():
 
     head = (
         f"# 📊 {today.strftime('%Y.%m.%d')} Market Insight & Strategy\n\n"
-        f"> 5채널 최근 {args.lookback}일 추출본 중 **historical α 양수 패턴 매칭 테마**만 표시.\n"
-        f"> 필터 통과: {len(themes)} / {total} themes ({len(themes)*100//max(total,1)}%)\n\n"
+        "> 시장에서 떠오르는 핵심 테마와 종목, 그리고 이번 주 행동 지침.\n\n"
         "---\n\n"
     )
 
     sect1 = render_market_temp(views, warnings, len(themes), total)
     sect2 = render_section(
         "2. 🔥 The Consensus (강력한 기회)",
-        "여러 채널이 동시에 거론하면서, 과거 α 양수 패턴에 매칭된 테마 — 가장 신뢰도 높음.",
+        "여러 시각이 한 방향으로 모이는 핵심 섹터입니다.",
         grouped["consensus"], args.top_consensus,
-        "_(오늘 consensus picks 없음 — 1채널 niche 또는 battleground 위주 전략)_",
+        "_(오늘은 합의된 핵심 섹터가 뚜렷하지 않습니다 — 개별 테마 위주로 접근)_",
     )
     sect3 = render_section(
         "3. ⚖️ The Battleground (전략적 선택)",
-        "동일 테마에 대해 채널 간 stance 가 갈리는 — 진입 타이밍이 핵심인 픽.",
+        "투자 성향에 따라 진입 타이밍을 달리해야 할 승부처입니다.",
         grouped["battleground"], args.top_battleground,
-        "_(오늘 battleground picks 없음 — 합의·niche 픽으로 진행)_",
+        "_(오늘은 시장이 뚜렷한 분기점에 있지 않습니다)_",
     )
     sect4 = render_section(
         "4. 💎 Unique Alpha (틈새 전략)",
-        "단일 채널 high-conviction (≥4) 픽. 단기 트레이딩 영역.",
+        "지수와 별개로 움직이는 개별 재료·정책 모멘텀 픽입니다.",
         grouped["niche"], args.top_niche,
-        "_(오늘 niche picks 없음)_",
+        "_(오늘은 두드러지는 틈새 픽이 없습니다)_",
     )
     sect5 = render_action_plan(themes, today)
     one = render_one_liner(themes)
