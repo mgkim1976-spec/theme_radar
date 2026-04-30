@@ -420,6 +420,18 @@ if [ "$SKIP_VALIDATION" = false ]; then
         log "  ✗ decay_robustness 실패"
         inc_fail
     fi
+    if python3 alpha_lookups.py >> "$LOG" 2>&1; then
+        log "  ✓ alpha_lookups.json (channel×signal/event_type/canonical 별 multi-window α)"
+    else
+        log "  ✗ alpha_lookups 실패"
+        inc_fail
+    fi
+    if python3 daily_alpha_digest.py >> "$LOG" 2>&1; then
+        log "  ✓ daily_alpha.md (단기 30d + 중기 90d 양수 picks)"
+    else
+        log "  ✗ daily_alpha_digest 실패"
+        inc_fail
+    fi
 else
     log "⏩ Stage 6 SKIPPED"
 fi
