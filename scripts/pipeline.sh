@@ -432,6 +432,12 @@ if [ "$SKIP_VALIDATION" = false ]; then
         log "  ✗ daily_alpha_digest 실패"
         inc_fail
     fi
+    if python3 daily_retail_alpha.py >> "$LOG" 2>&1; then
+        log "  ✓ today_retail.md (Market Insight & Strategy 형식, α 통과 픽만)"
+    else
+        log "  ✗ daily_retail_alpha 실패"
+        inc_fail
+    fi
 else
     log "⏩ Stage 6 SKIPPED"
 fi
