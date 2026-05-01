@@ -165,14 +165,22 @@ def llm_synthesize(today: date, consensus: list, niche: list, warnings: list,
     )
     user = json.dumps(payload, ensure_ascii=False)
 
-    try:
-        data, result = chat_json(system, user, model="gpt-5.4-mini")
-        cost_str = f"${result.cost_usd:.4f}" if hasattr(result, "cost_usd") else "?"
-        print(f"[daily_retail_alpha] LLM cost: {cost_str} ({result.input_tokens}+{result.output_tokens} tok)")
-        return data
-    except Exception as e:
-        print(f"[daily_retail_alpha] LLM 합성 실패 — fallback: {e}")
-        return None
+    import time
+    last_err = None
+    for attempt in range(3):
+        try:
+            data, result = chat_json(system, user, model="gpt-5.4-mini")
+            cost_str = f"${result.cost_usd:.4f}" if hasattr(result, "cost_usd") else "?"
+            print(f"[daily_retail_alpha] LLM cost: {cost_str} ({result.input_tokens}+{result.output_tokens} tok)")
+            return data
+        except Exception as e:
+            last_err = e
+            if attempt < 2:
+                wait = 5 * (attempt + 1)
+                print(f"[daily_retail_alpha] LLM 시도 {attempt+1}/3 실패 — {wait}s 후 재시도: {e}")
+                time.sleep(wait)
+    print(f"[daily_retail_alpha] LLM 합성 최종 실패 — fallback: {last_err}")
+    return None
 
 
 def collect_themes(lookback_days: int, today: date, lookups: dict, alias_to_canon: dict) -> list[dict]:
@@ -714,7 +722,7 @@ def render_one_liner(themes_all: list[dict]) -> str:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--lookback", type=int, default=3)
+    ap.add_argument("--lookback", type=int, default=7)
     ap.add_argument("--top-consensus", type=int, default=5)
     ap.add_argument("--top-battleground", type=int, default=3)
     ap.add_argument("--top-niche", type=int, default=5)
