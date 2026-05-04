@@ -4,6 +4,20 @@
 
 [Karpathy의 LLM-Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) 패턴을 금융 도메인에 적용. 4개 자동 학습 루프 (forward returns → 채널 가중치 / Query → 백링크 / Lint → 자동 해결 / methodology synth ← forward returns) 가 매일 06:00 launchd로 실행.
 
+## 🔑 용어 quick (처음 보는 사람용)
+
+- **Karpathy LLM-Wiki** — Andrej Karpathy 의 2024 gist. 자동 ingest → LLM 합성 → forward returns 검증 → 가중치 갱신 폐쇄루프 패턴 (위 gist 링크)
+- **Closed Loop A-D** — 본 시스템 4 자가 학습 루프. A) forward returns → channel `stock_weight` / B) query → backlink + citation / C) lint findings → 자동 해결 / D) returns → methodology synth
+- **Vault** — Obsidian vault (`~/iCloud~obsidian/theme_radar/`). 자동 누적 페이지 1,000+ + 매일 `today.md` 한 페이지 합성
+- **forward_validator** — 30/60/90일 forward returns 자동 측정. 채널 weight 의 ground truth
+- **scorecard** — 채널별 win rate + return 누적 — Loop A 의 입력
+- **21 신호 카테고리** — 영상 자막에서 LLM 이 추출하는 정보 type (테마 / 신호 / 종목 / 이벤트 / catalyst 등 21 종)
+- **theme×stock 매트릭스** — channel-weighted score (한 종목이 N 채널에서 언급된 가중 합)
+- **canonical theme dictionary** — 표현 중복 통합 ("AI 데이터센터" = "AI infra" = "데이터센터" → 하나로)
+- **Lifecycle (4단계)** — emerging (신규 등장) / accel (가속) / consensus (합의) / fading (소멸)
+- **comparative synth** — LLM 이 같은 테마 다중 채널 비교 → "어느 채널이 더 일찍 / 정확한가"
+- **lint findings** — Vault 의 일관성 검사 결과 (broken link / orphan page / missing metadata 등)
+
 ## 무엇을 하는가
 
 ```
